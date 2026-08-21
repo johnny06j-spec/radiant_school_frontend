@@ -1,0 +1,92 @@
+/* src/index.css */
+
+/* 🟢 DEFAULT DARK THEME VARIABLES */
+:root,
+[data-theme="dark"] {
+  --bg-main: #030712;
+  --bg-surface: #0b0f19;
+  --bg-card: #0b0f19;
+  --bg-card-secondary: #192239;
+  --bg-input: #091124;
+  --bg-hover: rgba(37, 99, 235, 0.12);
+
+  --border-color: #1f2937;
+  --border-subtle: #232d4b;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent-primary: #2563eb;
+  --accent-success: #10b981;
+  --accent-danger: #ef4444;
+  --accent-warning: #f59e0b;
+
+  --shadow-main: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ☀️ ENHANCED HIGH-CONTRAST LIGHT THEME VARIABLES */
+[data-theme="light"] {
+  --bg-main: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-secondary: #e2e8f0;
+  --bg-input: #f8fafc;
+  --bg-hover: rgba(37, 99, 235, 0.08);
+
+  --border-color: #cbd5e1;
+  --border-subtle: #e2e8f0;
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+
+  --accent-primary: #2563eb;
+  --accent-success: #16a34a;
+  --accent-danger: #dc2626;
+  --accent-warning: #d97706;
+
+  --shadow-main: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-subtle: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* 🔄 GLOBAL LAYOUT RESET & BASE STYLES */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  overflow-x: hidden;
+}
+
+/* 🎨 CUSTOM SCROLLBAR STYLING */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}

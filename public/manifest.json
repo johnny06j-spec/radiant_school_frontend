@@ -1,0 +1,17 @@
+{
+  "short_name": "Radiant",
+  "name": "Radiant College Portal",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#062c1e",
+  "theme_color": "#062c1e",
+  "display": "standalone",
+  "orientation": "portrait"
+}
