@@ -1,6 +1,7 @@
 // src/views/PaymentsDesk.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Users, AlertTriangle, FileText, Loader2, SlidersHorizontal } from 'lucide-react';
+import API from '../api/axiosInstance';
 import AdjustmentModal from '../components/admin/AdjustmentModal';
 
 const PaymentsDesk = () => {
@@ -37,13 +38,9 @@ const PaymentsDesk = () => {
   // 🔄 Global Refresh Engine - Calls endpoint without hardcoded query params so backend falls back to active SystemConfig
   const fetchGlobalMetrics = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/finance/dashboard-summary', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setGlobalMetrics(result.data);
+      const { data } = await API.get('/finance/dashboard-summary');
+      if (data.success) {
+        setGlobalMetrics(data.data);
       }
     } catch (err) {
       console.error("Failed to sync global financial data framework:", err);
@@ -57,20 +54,17 @@ const PaymentsDesk = () => {
     setFilteredStudents([]);
     
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `http://localhost:5000/api/finance/student-ledger/${student._id}?term=${encodeURIComponent(activeTerm)}&session=${encodeURIComponent(activeSession)}`, 
-        { headers: { 'Authorization': `Bearer ${token}` } }
+      const { data } = await API.get(
+        `/finance/student-ledger/${student._id}?term=${encodeURIComponent(activeTerm)}&session=${encodeURIComponent(activeSession)}`
       );
-      const result = await response.json();
       
-      if (result.success && result.data) {
-        setItemizedFees(result.data.items || []);
+      if (data.success && data.data) {
+        setItemizedFees(data.data.items || []);
         setStudentLedgerData({
-          currentTermFee: result.data.currentTermFee || 0,
-          totalPaid: result.data.totalPaid || 0,
-          previousOutstanding: result.data.previousOutstanding || 0,
-          totalOutstanding: result.data.totalOutstanding || 0
+          currentTermFee: data.data.currentTermFee || 0,
+          totalPaid: data.data.totalPaid || 0,
+          previousOutstanding: data.data.previousOutstanding || 0,
+          totalOutstanding: data.data.totalOutstanding || 0
         });
       }
     } catch (err) {
@@ -92,25 +86,23 @@ const PaymentsDesk = () => {
     const fetchInitialDirectory = async () => {
       setFetching(true);
       try {
-        const token = localStorage.getItem('token');
-        const headers = { 'Authorization': `Bearer ${token}` };
-
         // 1. Fetch Active System Configuration first
-const configRes = await fetch('http://localhost:5000/api/system/config', { headers }).catch(() => null);
-        if (configRes && configRes.ok) {
-          const configData = await configRes.json();
-          if (configData.data) {
-            if (configData.data.currentSession) setActiveSession(configData.data.currentSession);
-            if (configData.data.currentTerm) setActiveTerm(configData.data.currentTerm);
+        try {
+          const configRes = await API.get('/system/config');
+          if (configRes.data?.data) {
+            if (configRes.data.data.currentSession) setActiveSession(configRes.data.data.currentSession);
+            if (configRes.data.data.currentTerm) setActiveTerm(configRes.data.data.currentTerm);
           }
+        } catch (configErr) {
+          console.warn("System config pre-fetch fallback:", configErr);
         }
 
         // 2. Fetch Metrics
         await fetchGlobalMetrics();
 
         // 3. Fetch Directory
-        const studentsResponse = await fetch('http://localhost:5000/api/finance/directory', { headers });
-        const studentsData = await studentsResponse.json();
+        const studentsResponse = await API.get('/finance/directory');
+        const studentsData = studentsResponse.data;
         
         if (studentsData.success) {
           const rawList = studentsData.data || studentsData.students || [];
