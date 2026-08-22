@@ -1,6 +1,7 @@
 // src/pages/SystemSettings.jsx
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import API from '../api/axiosInstance';
 
 const SystemSettings = () => {
   const [session, setSession] = useState('2026/2027');
@@ -16,17 +17,13 @@ const SystemSettings = () => {
     // Fetch current settings from backend on mount
     const fetchCurrentSettings = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/system/config', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
+        const { data } = await API.get('/system/config');
         if (data.success && data.config) {
           setSession(data.config.currentSession);
           setTerm(data.config.currentTerm);
         }
       } catch (err) {
-        console.error("Failed to fetch system settings:", err);
+        console.error('Failed to fetch system settings:', err);
       }
     };
     fetchCurrentSettings();
@@ -38,24 +35,17 @@ const SystemSettings = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/system/config', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ currentSession: session, currentTerm: term })
+      const { data } = await API.put('/system/config', {
+        currentSession: session,
+        currentTerm: term,
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'System configurations updated successfully!' });
-      } else {
-        setMessage({ type: 'error', text: data.message || 'Failed to update configurations.' });
-      }
+      setMessage({ type: 'success', text: 'System configurations updated successfully!' });
     } catch (err) {
-      setMessage({ type: 'error', text: 'Network connection error. Failed to save configuration.' });
+      const errorMsg =
+        err.response?.data?.message ||
+        'Network connection error. Failed to save configuration.';
+      setMessage({ type: 'error', text: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -149,7 +139,7 @@ const SystemSettings = () => {
       fontSize: '14px',
       fontWeight: '600',
       marginBottom: '1.5rem',
-    }
+    },
   };
 
   return (
@@ -164,12 +154,23 @@ const SystemSettings = () => {
 
       <div style={styles.card}>
         {message.text && (
-          <div style={{
-            ...styles.alert,
-            background: message.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-            border: message.type === 'success' ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
-            color: message.type === 'success' ? 'var(--accent-success)' : 'var(--accent-danger)',
-          }}>
+          <div
+            style={{
+              ...styles.alert,
+              background:
+                message.type === 'success'
+                  ? 'rgba(34, 197, 94, 0.1)'
+                  : 'rgba(239, 68, 68, 0.1)',
+              border:
+                message.type === 'success'
+                  ? '1px solid rgba(34, 197, 94, 0.25)'
+                  : '1px solid rgba(239, 68, 68, 0.25)',
+              color:
+                message.type === 'success'
+                  ? 'var(--accent-success)'
+                  : 'var(--accent-danger)',
+            }}
+          >
             {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
             {message.text}
           </div>
@@ -178,37 +179,41 @@ const SystemSettings = () => {
         <form onSubmit={handleSave}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Active Academic Session</label>
-            <select 
-              value={session} 
-              onChange={(e) => setSession(e.target.value)} 
+            <select
+              value={session}
+              onChange={(e) => setSession(e.target.value)}
               style={styles.select}
             >
-              {sessionOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
+              {sessionOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
 
           <div style={styles.formGroup}>
             <label style={styles.label}>Active Academic Term</label>
-            <select 
-              value={term} 
-              onChange={(e) => setTerm(e.target.value)} 
+            <select
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
               style={styles.select}
             >
-              {termOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
+              {termOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading} 
-            style={{ 
-              ...styles.button, 
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              ...styles.button,
               opacity: loading ? 0.7 : 1,
-              transform: loading ? 'scale(0.98)' : 'scale(1)'
+              transform: loading ? 'scale(0.98)' : 'scale(1)',
             }}
           >
             <Save size={18} />
