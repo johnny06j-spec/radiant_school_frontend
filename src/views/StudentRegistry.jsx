@@ -24,7 +24,6 @@ const StudentRegistry = ({ setActiveTab, studentId }) => {
     handleSubmit
   } = useStudentForm(setActiveTab, studentId);
 
-  // Dynamic CSS variable style mapping for seamless Theme Context switching
   const styles = {
     container: { 
       minHeight: "100vh", 
@@ -79,7 +78,6 @@ const StudentRegistry = ({ setActiveTab, studentId }) => {
     }
   };
 
-  // Programmatically generate academic sessions from 2010/2011 to 2029/2030
   const academicSessionsRange = Array.from({ length: 20 }, (_, index) => {
     const startYear = 2010 + index;
     const endYear = startYear + 1;
@@ -146,7 +144,6 @@ const StudentRegistry = ({ setActiveTab, studentId }) => {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Personal Information Section */}
           <PersonalInfoSection 
             formData={{
               ...formData,
@@ -161,7 +158,6 @@ const StudentRegistry = ({ setActiveTab, studentId }) => {
             academicSessionsRange={academicSessionsRange}
           />
 
-          {/* Guardians Section */}
           <GuardiansSection formData={formData} handleChange={handleChange} styles={styles} />
 
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
@@ -177,7 +173,6 @@ const StudentRegistry = ({ setActiveTab, studentId }) => {
         </form>
       </div>
 
-      {/* Generated Account Modal */}
       {generatedCreds && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
           <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)", borderRadius: "12px", padding: "1.75rem", width: "100%", maxWidth: "420px", textAlign: "center", boxShadow: "var(--shadow-main)" }}>

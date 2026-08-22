@@ -48,7 +48,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
     guardianAddress: ""
   });
 
-  // Safely handle going back without changing location.state mid-flight!
+  // Safely handle going back without changing location.state mid-flight
   const handleBackToDirectory = () => {
     if (typeof setActiveTab === "function") {
       setActiveTab("directory");
@@ -104,7 +104,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
             if (data.passportPhoto) setImagePreview(data.passportPhoto);
           }
         } catch (err) {
-          setErrorMsg("Failed to stream database records.");
+          setErrorMsg(err.response?.data?.message || "Failed to stream database records.");
         } finally {
           setIsLoadingProfile(false);
         }
@@ -117,7 +117,6 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      // Sync aliases automatically
       if (name === "intakeSession" || name === "admittedSession") {
         updated.intakeSession = value;
         updated.admittedSession = value;
@@ -170,9 +169,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
       });
 
       if (isEditMode) {
-        const response = await API.put(`/students/${studentId}`, dataContainer, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
+        const response = await API.put(`/students/${studentId}`, dataContainer);
         if (response.status === 200 || response.data?.success) {
           setSuccessMsg("🎉 Student profile updated successfully!");
           setTimeout(() => {
@@ -180,9 +177,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
           }, 1500);
         }
       } else {
-        const response = await API.post("/auth/register-student", dataContainer, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
+        const response = await API.post("/auth/register-student", dataContainer);
         if (response.data?.success && response.data?.credentials) {
           setSuccessMsg("Student processed cleanly!");
           setGeneratedCreds(response.data.credentials);
