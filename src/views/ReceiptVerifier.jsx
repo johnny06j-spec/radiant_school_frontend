@@ -1,6 +1,7 @@
 // src/views/ReceiptVerifier.jsx
 import React, { useState } from 'react';
 import { ShieldCheck, ShieldAlert, Search, Loader2, Calendar, User, FileText, CheckCircle2, GraduationCap, Printer, Clock } from 'lucide-react';
+import API from '../api/axiosInstance';
 
 const ReceiptVerifier = () => {
   const [reference, setReference] = useState('');
@@ -16,25 +17,17 @@ const ReceiptVerifier = () => {
     setError('');
     setReceiptData(null);
 
-    const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`http://localhost:5000/api/finance/verify-receipt?reference=${encodeURIComponent(reference.trim())}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const { data } = await API.get(`/finance/verify-receipt?reference=${encodeURIComponent(reference.trim())}`);
 
-      const result = await response.json();
-      if (result.success && result.data) {
-        setReceiptData(result.data);
+      if (data.success && data.data) {
+        setReceiptData(data.data);
       } else {
-        setError(result.message || "Invalid Receipt Reference. No authentic matches found in system database records.");
+        setError(data.message || 'Invalid Receipt Reference. No authentic matches found in system database records.');
       }
     } catch (err) {
-      console.error("💥 Receipt authentication process error:", err);
-      setError("Network runtime exception connecting to secure audit log engine.");
+      console.error('💥 Receipt authentication process error:', err);
+      setError(err.response?.data?.message || 'Invalid Receipt Reference. No authentic matches found in system database records.');
     } finally {
       setLoading(false);
     }
@@ -47,20 +40,20 @@ const ReceiptVerifier = () => {
   // 🟢 Safe Name Resolution
   const resolvedStudentName = receiptData?.studentName || 
     (receiptData?.studentId ? `${receiptData.studentId.surname || ''} ${receiptData.studentId.firstName || ''}`.trim() : null) || 
-    "Active Student";
+    'Active Student';
 
   // 🟢 Safe Class Resolution
   const resolvedClass = receiptData?.className || 
     receiptData?.studentClass || 
     receiptData?.studentId?.currentClass || 
     receiptData?.studentId?.assignedClass || 
-    "N/A";
+    'N/A';
 
   // 🟢 Safe Timestamp Resolution
   const rawDate = receiptData?.paidAt || receiptData?.createdAt || receiptData?.date || receiptData?.updatedAt;
   const resolvedPaidAt = rawDate 
     ? new Date(rawDate).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) 
-    : "N/A";
+    : 'N/A';
 
   return (
     <div style={styles.container}>
@@ -124,7 +117,7 @@ const ReceiptVerifier = () => {
                   <FileText size={14} style={styles.rowIcon} /> 
                   <span style={styles.detailLabel}>Admission No:</span> 
                   <strong style={{ ...styles.detailValue, color: 'var(--accent-primary)', fontFamily: 'monospace' }}>
-                    {receiptData.admissionNo || receiptData.studentId?.admissionNo || "N/A"}
+                    {receiptData.admissionNo || receiptData.studentId?.admissionNo || 'N/A'}
                   </strong>
                 </div>
 
