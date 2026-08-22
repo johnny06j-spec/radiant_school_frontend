@@ -1,15 +1,16 @@
 // src/views/student/StudentFinance.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RefreshCw, Calendar, Info, ChevronDown, ChevronUp, Lock, CheckCircle2, Download } from 'lucide-react';
+import API from '../../api/axiosInstance';
 
 const StudentFinance = ({ studentId }) => {
   const [profile, setProfile] = useState(null);
   const [ledgerData, setLedgerData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
-  const [customPayAmount, setCustomPayAmount] = useState("");
+  const [customPayAmount, setCustomPayAmount] = useState('');
   const [downloadingRef, setDownloadingRef] = useState(null);
-  
+
   // Verification states
   const [verifying, setVerifying] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
@@ -17,64 +18,53 @@ const StudentFinance = ({ studentId }) => {
 
   // Accordions are open by default
   const [openAccordions, setOpenAccordions] = useState({
-    "First Term": true,
-    "Second Term": true,
-    "Third Term": true
+    'First Term': true,
+    'Second Term': true,
+    'Third Term': true,
   });
-
-  const token = localStorage.getItem('token');
 
   // 🟢 FETCH PROFILE & LEDGER FOR THE ACTIVE STUDENT ID
   const fetchProfileData = useCallback(async () => {
     setLoading(true);
     try {
       // 1. Fetch Targeted Student Profile (or fallback to /me)
-      const profileEndpoint = studentId 
-        ? `http://localhost:5000/api/students/profile/me?studentId=${studentId}`
-        : 'http://localhost:5000/api/students/profile/me';
+      const profileEndpoint = studentId
+        ? `/students/profile/me?studentId=${studentId}`
+        : '/students/profile/me';
 
-      const profRes = await fetch(profileEndpoint, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const profData = await profRes.json();
-      
+      const profRes = await API.get(profileEndpoint);
+      const profData = profRes.data;
+
       if (profData?.success && profData?.student) {
         const studentObj = profData.student;
         setProfile(studentObj);
 
         const activeStudentId = studentObj._id;
-        const currentSession = studentObj.academicSession || "2026/2027";
-        const currentTerm = studentObj.academicTerm || "First Term";
+        const currentSession = studentObj.academicSession || '2026/2027';
+        const currentTerm = studentObj.academicTerm || 'First Term';
 
         // 2. Fetch Targeted Student Ledger Statement
-        const ledgerRes = await fetch(
-          `http://localhost:5000/api/finance/student-ledger/${activeStudentId}?term=${encodeURIComponent(currentTerm)}&session=${encodeURIComponent(currentSession)}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          }
+        const ledgerRes = await API.get(
+          `/finance/student-ledger/${activeStudentId}?term=${encodeURIComponent(
+            currentTerm
+          )}&session=${encodeURIComponent(currentSession)}`
         );
-        const ledgerJson = await ledgerRes.json();
-        
+        const ledgerJson = ledgerRes.data;
+
         if (ledgerJson?.success && ledgerJson?.data) {
           setLedgerData(ledgerJson.data);
 
           // Auto-fill checkout input field with active total outstanding debt
           const totalDebt = ledgerJson.data.totalOutstanding || 0;
-          setCustomPayAmount(totalDebt > 0 ? totalDebt.toString() : "");
+          setCustomPayAmount(totalDebt > 0 ? totalDebt.toString() : '');
         }
       }
     } catch (error) {
-      console.error("Failed to fetch student profile or ledger statement:", error);
+      console.error('Failed to fetch student profile or ledger statement:', error);
     } finally {
       setLoading(false);
     }
-  }, [studentId, token]);
+  }, [studentId]);
 
   // 🟢 RE-RUN WHEN STUDENT ID OR PAYMENT VERIFICATION CHANGES
   useEffect(() => {
@@ -85,34 +75,27 @@ const StudentFinance = ({ studentId }) => {
       const runPaymentVerification = async () => {
         setVerifying(true);
         try {
-          const response = await fetch(`http://localhost:5000/api/finance/paystack/verify/${reference}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          const data = await response.json();
+          const { data } = await API.get(`/finance/paystack/verify/${reference}`);
           if (data?.success) {
             setVerifiedPaidAmount(data.verifiedAmount || 0);
             setVerificationSuccess(true);
-            
+
             setTimeout(() => {
               setVerificationSuccess(false);
               // Clean query parameters while maintaining studentId context
               const currentPath = window.location.pathname;
               const activeId = studentId || profile?._id;
               const cleanUrl = activeId ? `${currentPath}?studentId=${activeId}` : currentPath;
-              
+
               window.history.replaceState({}, document.title, cleanUrl);
               fetchProfileData();
             }, 3500);
           } else {
-            alert(data.message || "Payment verification failed.");
+            alert(data.message || 'Payment verification failed.');
           }
         } catch (error) {
-          console.error("Error verifying payment reference:", error);
-          alert("Failed to confirm your payment with our servers.");
+          console.error('Error verifying payment reference:', error);
+          alert('Failed to confirm your payment with our servers.');
         } finally {
           setVerifying(false);
         }
@@ -122,30 +105,32 @@ const StudentFinance = ({ studentId }) => {
     } else {
       fetchProfileData();
     }
-  }, [fetchProfileData, token, studentId]);
+  }, [fetchProfileData, studentId, profile?._id]);
 
   // DYNAMICALLY RENDER ALL UNPAID TERMS WITH CLEAN CONSOLIDATED ITEMS
   const outstandingGroups = useMemo(() => {
     if (!profile || !ledgerData) return [];
 
     const groupsMap = {};
-    const academicSession = profile.academicSession || "2026/2027";
-    const currentTermTitle = profile.academicTerm || "First Term";
+    const academicSession = profile.academicSession || '2026/2027';
+    const currentTermTitle = profile.academicTerm || 'First Term';
 
     // 1. Map Historical / Previous Outstanding Debt (if applicable)
     if (ledgerData.previousOutstanding > 0) {
-      const prevKey = "Previous Outstanding Debt";
+      const prevKey = 'Previous Outstanding Debt';
       groupsMap[prevKey] = {
         id: prevKey,
         session: `${academicSession} Prior Balances`,
         term: prevKey,
         termColor: 'var(--accent-warning)',
-        items: [{
-          description: "Arrears / Uncleared Previous Terms Debt",
-          type: "Arrears",
-          amount: ledgerData.previousOutstanding
-        }],
-        groupTotal: ledgerData.previousOutstanding
+        items: [
+          {
+            description: 'Arrears / Uncleared Previous Terms Debt',
+            type: 'Arrears',
+            amount: ledgerData.previousOutstanding,
+          },
+        ],
+        groupTotal: ledgerData.previousOutstanding,
       };
     }
 
@@ -156,12 +141,12 @@ const StudentFinance = ({ studentId }) => {
         session: `${academicSession} Academic Session`,
         term: currentTermTitle,
         termColor: 'var(--accent-success)',
-        items: ledgerData.items.map(item => ({
+        items: ledgerData.items.map((item) => ({
           description: item.name,
-          type: item.appliesTo === "All Students" ? "Structural" : "Other",
-          amount: item.amount
+          type: item.appliesTo === 'All Students' ? 'Structural' : 'Other',
+          amount: item.amount,
         })),
-        groupTotal: ledgerData.currentTermFee
+        groupTotal: ledgerData.currentTermFee,
       };
     }
 
@@ -175,10 +160,11 @@ const StudentFinance = ({ studentId }) => {
   }, [ledgerData]);
 
   const toggleAccordion = (id) => {
-    setOpenAccordions(prev => ({ ...prev, [id]: !prev[id] }));
+    setOpenAccordions((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const totalOutstandingBalance = ledgerData?.totalOutstanding ?? profile?.financialSummary?.totalOutstanding ?? 0;
+  const totalOutstandingBalance =
+    ledgerData?.totalOutstanding ?? profile?.financialSummary?.totalOutstanding ?? 0;
 
   const remainingBalanceAfterPayment = useMemo(() => {
     const entered = parseFloat(customPayAmount) || 0;
@@ -189,7 +175,7 @@ const StudentFinance = ({ studentId }) => {
     const amountToPay = Number(customPayAmount || 0);
 
     if (amountToPay < 100) {
-      alert("Minimum payment amount is ₦100.00.");
+      alert('Minimum payment amount is ₦100.00.');
       return;
     }
 
@@ -198,32 +184,23 @@ const StudentFinance = ({ studentId }) => {
       const activeId = profile?._id || studentId;
       const callbackUrl = `${window.location.origin}${window.location.pathname}?studentId=${activeId}`;
 
-      const response = await fetch('http://localhost:5000/api/finance/paystack/initialize', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          studentId: activeId, // 🟢 Always sends active profile ID
-          amount: amountToPay, 
-          term: profile?.academicTerm || "First Term",
-          session: profile?.academicSession || "2026/2027",
-          paymentType: 'term_fees',
-          callbackUrl // 🟢 Returns parent directly to this active student profile
-        })
+      const { data } = await API.post('/finance/paystack/initialize', {
+        studentId: activeId,
+        amount: amountToPay,
+        term: profile?.academicTerm || 'First Term',
+        session: profile?.academicSession || '2026/2027',
+        paymentType: 'term_fees',
+        callbackUrl,
       });
 
-      const data = await response.json();
-      
       if (data?.success && data?.authorization_url) {
         window.location.href = data.authorization_url;
       } else {
-        alert(data.message || "Failed to contact Paystack checkout gateway.");
+        alert(data.message || 'Failed to contact Paystack checkout gateway.');
       }
     } catch (error) {
-      console.error("Payment submission failure:", error);
-      alert("Failed to process checkout transaction.");
+      console.error('Payment submission failure:', error);
+      alert('Failed to process checkout transaction.');
     } finally {
       setPaying(false);
     }
@@ -233,16 +210,11 @@ const StudentFinance = ({ studentId }) => {
   const handleDownloadReceipt = async (reference) => {
     setDownloadingRef(reference);
     try {
-      const response = await fetch(`http://localhost:5000/api/finance/receipt/${reference}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await API.get(`/finance/receipt/${reference}`, {
+        responseType: 'blob',
       });
 
-      if (!response.ok) throw new Error("Could not extract dynamic invoice PDF metadata.");
-
-      const blob = await response.blob();
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -251,8 +223,8 @@ const StudentFinance = ({ studentId }) => {
       link.click();
       link.parentNode.removeChild(link);
     } catch (error) {
-      console.error("💥 Receipt engine processing failure:", error);
-      alert("Failed to compile dynamic school document summary.");
+      console.error('💥 Receipt engine processing failure:', error);
+      alert('Failed to compile dynamic school document summary.');
     } finally {
       setDownloadingRef(null);
     }
@@ -261,9 +233,13 @@ const StudentFinance = ({ studentId }) => {
   if (verifying) {
     return (
       <div style={styles.loadingWrapper}>
-        <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-primary)' }} /> 
-        <span style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)' }}>Securing payment validation receipt from Paystack...</span>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Please do not close this window or hit refresh.</p>
+        <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-primary)' }} />
+        <span style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)' }}>
+          Securing payment validation receipt from Paystack...
+        </span>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+          Please do not close this window or hit refresh.
+        </p>
       </div>
     );
   }
@@ -272,7 +248,9 @@ const StudentFinance = ({ studentId }) => {
     return (
       <div style={styles.loadingWrapper}>
         <CheckCircle2 size={48} style={{ color: 'var(--accent-success)', marginBottom: '8px' }} />
-        <span style={{ fontWeight: '800', fontSize: '18px', color: 'var(--text-primary)' }}>Payment Successful!</span>
+        <span style={{ fontWeight: '800', fontSize: '18px', color: 'var(--text-primary)' }}>
+          Payment Successful!
+        </span>
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0 0', textAlign: 'center' }}>
           ₦{verifiedPaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })} has been securely reconciled.<br />
           Your updated balance sheet is loading now...
@@ -284,21 +262,26 @@ const StudentFinance = ({ studentId }) => {
   if (loading) {
     return (
       <div style={styles.loadingWrapper}>
-        <RefreshCw className="animate-spin" size={20} style={{ color: 'var(--accent-primary)' }} /> 
-        <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>Syncing student real-time statement balances...</span>
+        <RefreshCw className="animate-spin" size={20} style={{ color: 'var(--accent-primary)' }} />
+        <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>
+          Syncing student real-time statement balances...
+        </span>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
-      
       <header style={styles.headerRow}>
         <div>
           <span style={styles.breadcrumb}>FINANCE / PAYMENT</span>
           <h1 style={styles.pageTitle}>Make a Payment</h1>
           <p style={styles.pageSubtitle}>
-            Reviewing outstanding fees for <strong style={{ color: 'var(--accent-primary)' }}>{profile?.firstName} {profile?.lastName}</strong> ({profile?.currentClass}).
+            Reviewing outstanding fees for{' '}
+            <strong style={{ color: 'var(--accent-primary)' }}>
+              {profile?.firstName} {profile?.lastName}
+            </strong>{' '}
+            ({profile?.currentClass}).
           </p>
         </div>
         <div style={styles.activeSessionBadge}>
@@ -344,7 +327,14 @@ const StudentFinance = ({ studentId }) => {
                             <tr key={index} style={styles.tableBodyRow}>
                               <td style={styles.tdPrimary}>{item.description}</td>
                               <td style={{ ...styles.td, color: 'var(--text-muted)' }}>{item.type}</td>
-                              <td style={{ ...styles.td, textAlign: 'right', color: 'var(--text-primary)', fontWeight: '700' }}>
+                              <td
+                                style={{
+                                  ...styles.td,
+                                  textAlign: 'right',
+                                  color: 'var(--text-primary)',
+                                  fontWeight: '700',
+                                }}
+                              >
                                 ₦{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                               </td>
                             </tr>
@@ -374,7 +364,9 @@ const StudentFinance = ({ studentId }) => {
 
         <div style={styles.highlightedTotalCard}>
           <span style={styles.totalLabel}>TOTAL OUTSTANDING BALANCE</span>
-          <span style={styles.totalValue}>₦{totalOutstandingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          <span style={styles.totalValue}>
+            ₦{totalOutstandingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </span>
         </div>
       </section>
 
@@ -384,7 +376,7 @@ const StudentFinance = ({ studentId }) => {
         <p style={styles.cardSubtitle}>
           View chronological historical payment transactions and download custom school-branded receipts.
         </p>
-        
+
         <div style={{ marginTop: '1.5rem', overflowX: 'auto' }}>
           {pastPaymentsHistoryList.length > 0 ? (
             <table style={styles.table}>
@@ -400,8 +392,19 @@ const StudentFinance = ({ studentId }) => {
               <tbody>
                 {pastPaymentsHistoryList.map((payment, index) => (
                   <tr key={index} style={styles.tableBodyRow}>
-                    <td style={{ ...styles.td, color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '12px' }}>{payment.reference}</td>
-                    <td style={styles.tdPrimary}>{payment.session} - {payment.term}</td>
+                    <td
+                      style={{
+                        ...styles.td,
+                        color: 'var(--text-muted)',
+                        fontFamily: 'monospace',
+                        fontSize: '12px',
+                      }}
+                    >
+                      {payment.reference}
+                    </td>
+                    <td style={styles.tdPrimary}>
+                      {payment.session} - {payment.term}
+                    </td>
                     <td style={{ ...styles.td, color: 'var(--accent-success)', fontWeight: '700' }}>
                       ₦{Number(payment.amountPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
@@ -409,12 +412,12 @@ const StudentFinance = ({ studentId }) => {
                       {new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}
                     </td>
                     <td style={{ ...styles.td, textAlign: 'right' }}>
-                      <button 
+                      <button
                         onClick={() => handleDownloadReceipt(payment.reference)}
                         disabled={downloadingRef === payment.reference}
                         style={{
                           ...styles.receiptActionBtn,
-                          opacity: downloadingRef === payment.reference ? 0.5 : 1
+                          opacity: downloadingRef === payment.reference ? 0.5 : 1,
                         }}
                       >
                         {downloadingRef === payment.reference ? (
@@ -432,7 +435,15 @@ const StudentFinance = ({ studentId }) => {
               </tbody>
             </table>
           ) : (
-            <div style={{ padding: '1.5rem 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600' }}>
+            <div
+              style={{
+                padding: '1.5rem 0',
+                textAlign: 'center',
+                color: 'var(--text-muted)',
+                fontSize: '13px',
+                fontWeight: '600',
+              }}
+            >
               No transactional history found in {profile?.firstName}'s ledger data maps.
             </div>
           )}
@@ -448,7 +459,9 @@ const StudentFinance = ({ studentId }) => {
 
         <div style={styles.summaryContainer}>
           <div style={styles.summaryLine}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>Outstanding Balance</span>
+            <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Outstanding Balance
+            </span>
             <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-danger)' }}>
               ₦{totalOutstandingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
@@ -458,7 +471,7 @@ const StudentFinance = ({ studentId }) => {
             <label style={styles.inputLabel}>Amount Paying Today</label>
             <div style={styles.inputWrapper}>
               <span style={styles.currencySymbol}>₦</span>
-              <input 
+              <input
                 type="number"
                 value={customPayAmount}
                 onChange={(e) => setCustomPayAmount(e.target.value)}
@@ -470,7 +483,9 @@ const StudentFinance = ({ studentId }) => {
           </div>
 
           <div style={styles.remainingBalanceRow}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>Remaining Balance After Payment</span>
+            <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Remaining Balance After Payment
+            </span>
             <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-success)' }}>
               ₦{remainingBalanceAfterPayment.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
@@ -481,7 +496,10 @@ const StudentFinance = ({ studentId }) => {
           <Info size={16} style={styles.noteIcon} />
           <div style={styles.noteTextContainer}>
             <p style={styles.noteTitle}>
-              Note: <span style={styles.noteBody}>Payments are automatically applied to clear the oldest outstanding fees first.</span>
+              Note:{' '}
+              <span style={styles.noteBody}>
+                Payments are automatically applied to clear the oldest outstanding fees first.
+              </span>
             </p>
             <p style={styles.noteBodySub}>You cannot choose which fees to pay.</p>
           </div>
@@ -490,13 +508,13 @@ const StudentFinance = ({ studentId }) => {
 
       {/* SUBMIT ACTIONS */}
       <div style={styles.buttonStack}>
-        <button 
-          onClick={handleGatewayCheckout} 
+        <button
+          onClick={handleGatewayCheckout}
           disabled={paying || totalOutstandingBalance <= 0}
-          style={{ 
-            ...styles.paystackBtn, 
-            opacity: (paying || totalOutstandingBalance <= 0) ? 0.6 : 1,
-            cursor: (paying || totalOutstandingBalance <= 0) ? 'not-allowed' : 'pointer'
+          style={{
+            ...styles.paystackBtn,
+            opacity: paying || totalOutstandingBalance <= 0 ? 0.6 : 1,
+            cursor: paying || totalOutstandingBalance <= 0 ? 'not-allowed' : 'pointer',
           }}
         >
           {paying ? (
@@ -513,7 +531,6 @@ const StudentFinance = ({ studentId }) => {
           <span>You will be redirected to Paystack to complete your payment securely.</span>
         </p>
       </div>
-
     </div>
   );
 };
@@ -564,7 +581,7 @@ const styles = {
   paystackBtn: { width: '100%', background: 'var(--accent-primary)', color: '#fff', border: 'none', borderRadius: '8px', padding: '1rem', fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.15s ease', outline: 'none', boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.1)' },
   buttonHelperText: { margin: 0, textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
   loadingWrapper: { minHeight: '100vh', background: 'var(--bg-main)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'var(--text-secondary)', fontFamily: 'sans-serif' },
-  receiptActionBtn: { background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.25)', color: 'var(--accent-primary)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', outline: 'none', transition: 'all 0.15s ease' }
+  receiptActionBtn: { background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.25)', color: 'var(--accent-primary)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', outline: 'none', transition: 'all 0.15s ease' },
 };
 
 export default StudentFinance;
