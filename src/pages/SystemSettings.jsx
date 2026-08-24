@@ -1,11 +1,12 @@
 // src/pages/SystemSettings.jsx
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Settings, Save, AlertCircle, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
 import API from '../api/axiosInstance';
 
 const SystemSettings = () => {
   const [session, setSession] = useState('2026/2027');
   const [term, setTerm] = useState('First Term');
+  const [initialSession, setInitialSession] = useState('2026/2027');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -18,7 +19,10 @@ const SystemSettings = () => {
         const { data } = await API.get('/system/config');
         const config = data?.data || data?.config;
         if (data?.success && config) {
-          if (config.currentSession) setSession(config.currentSession);
+          if (config.currentSession) {
+            setSession(config.currentSession);
+            setInitialSession(config.currentSession);
+          }
           if (config.currentTerm) setTerm(config.currentTerm);
         }
       } catch (err) {
@@ -27,6 +31,8 @@ const SystemSettings = () => {
     };
     fetchCurrentSettings();
   }, []);
+
+  const isSessionChanging = initialSession && session !== initialSession;
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -41,6 +47,7 @@ const SystemSettings = () => {
 
       const successMsg = data?.message || 'System configurations updated successfully!';
       setMessage({ type: 'success', text: successMsg });
+      setInitialSession(session);
     } catch (err) {
       const errorMsg =
         err.response?.data?.message ||
@@ -111,6 +118,19 @@ const SystemSettings = () => {
       cursor: 'pointer',
       boxSizing: 'border-box',
       transition: 'border-color 0.2s',
+    },
+    rolloverNotice: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '10px',
+      padding: '12px 14px',
+      borderRadius: '8px',
+      background: 'rgba(234, 179, 8, 0.08)',
+      border: '1px solid rgba(234, 179, 8, 0.25)',
+      color: 'var(--accent-warning)',
+      fontSize: '12px',
+      lineHeight: '1.5',
+      marginBottom: '1.5rem',
     },
     button: {
       display: 'flex',
@@ -206,6 +226,17 @@ const SystemSettings = () => {
             </select>
           </div>
 
+          {isSessionChanging && (
+            <div style={styles.rolloverNotice}>
+              <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Academic Session Rollover Trigger:</strong> Changing the session from{' '}
+                <span style={{ textDecoration: 'underline' }}>{initialSession}</span> to{' '}
+                <span style={{ fontWeight: '800' }}>{session}</span> will automatically execute all approved student promotions and advance all students to the new academic year.
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -216,7 +247,7 @@ const SystemSettings = () => {
             }}
           >
             <Save size={18} />
-            {loading ? 'Saving Academic Settings...' : 'Save Configuration'}
+            {loading ? 'Executing Academic Rollover...' : 'Save Configuration'}
           </button>
         </form>
       </div>
