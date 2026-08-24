@@ -26,8 +26,9 @@ const StudentDashboard = () => {
   const { isDark, toggleTheme } = useTheme();
   
   const [activeTab, setActiveTab] = useState('overview');
-  const [activeStudentId, setActiveStudentId] = useState(null); // Explicit Active Student Tracker
+  const [activeStudentId, setActiveStudentId] = useState(null);
   const [studentData, setStudentData] = useState(null);
+  const [activeConfig, setActiveConfig] = useState({ session: '2026/2027', term: 'First Term' });
   const [linkedSiblings, setLinkedSiblings] = useState([]);
   const [ledgerData, setLedgerData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,24 @@ const StudentDashboard = () => {
   const fetchDashboardData = useCallback(async (targetStudentId = null) => {
     try {
       setLoading(true);
+
+      // 🟢 1. Fetch system-wide active session & term from system config
+      let systemSession = '2026/2027';
+      let systemTerm = 'First Term';
+
+      try {
+        const configRes = await API.get('/system/config');
+        const cfg = configRes.data?.data || configRes.data?.config;
+        if (configRes.data?.success && cfg) {
+          systemSession = cfg.currentSession || systemSession;
+          systemTerm = cfg.currentTerm || systemTerm;
+          setActiveConfig({ session: systemSession, term: systemTerm });
+        }
+      } catch (cfgErr) {
+        console.warn("Could not retrieve dynamic system config, using fallbacks:", cfgErr);
+      }
+
+      // 🟢 2. Fetch authenticated student profile
       const endpoint = targetStudentId 
         ? `/students/profile/me?studentId=${targetStudentId}` 
         : '/students/profile/me';
@@ -47,17 +66,16 @@ const StudentDashboard = () => {
       if (response.data?.success && response.data?.student) {
         const student = response.data.student;
         setStudentData(student);
-        setActiveStudentId(student._id); // Sync active student ID in state
+        setActiveStudentId(student._id);
 
-        // Preserve siblings list across profile switches
         if (student.linkedSiblings && Array.isArray(student.linkedSiblings)) {
           setLinkedSiblings(student.linkedSiblings);
         }
 
-        const activeSession = student.academicSession || "2026/2027";
-        const activeTerm = student.academicTerm || "First Term";
-
-        const ledgerRes = await API.get(`/finance/student-ledger/${student._id}?term=${encodeURIComponent(activeTerm)}&session=${encodeURIComponent(activeSession)}`);
+        // 🟢 3. Fetch financial ledger using active system term & session
+        const ledgerRes = await API.get(
+          `/finance/student-ledger/${student._id}?term=${encodeURIComponent(systemTerm)}&session=${encodeURIComponent(systemSession)}`
+        );
         if (ledgerRes.data?.success) {
           setLedgerData(ledgerRes.data.data);
         }
@@ -74,7 +92,6 @@ const StudentDashboard = () => {
     const handleResize = () => setIsMobile(window.innerWidth <= 1024);
     window.addEventListener('resize', handleResize);
 
-    // Check if coming back from Paystack redirect with ?studentId=...
     const queryParams = new URLSearchParams(location.search);
     const redirectStudentId = queryParams.get('studentId');
 
@@ -111,15 +128,12 @@ const StudentDashboard = () => {
     fetchDashboardData(activeStudentId || studentData?._id);
   };
 
-  // 🟢 UNLINK SIBLING HANDLER
   const handleUnlinkSibling = async (siblingId) => {
     try {
       const response = await API.post('/students/unlink-sibling', { siblingId });
       if (response.data?.success) {
         const updatedList = response.data.linkedSiblings || [];
         setLinkedSiblings(updatedList);
-        
-        // Refresh active profile parameters if needed
         await fetchDashboardData(activeStudentId || studentData?._id);
       }
     } catch (err) {
@@ -153,14 +167,16 @@ const StudentDashboard = () => {
     lastName: studentData?.lastName || "",
     admissionNo: studentData?.admissionNo || "N/A",
     currentClass: studentData?.currentClass || studentData?.assignedClass || "N/A",
-    academicSession: studentData?.academicSession || "2026/2027",
-    academicTerm: studentData?.academicTerm || "First Term",
+    academicSession: activeConfig.session,
+    academicTerm: activeConfig.term,
     admissionSession: studentData?.intakeSession || studentData?.admissionSession || "2026/2027", 
     admissionTerm: studentData?.intakeTerm || studentData?.admissionTerm || "First Term",
     status: studentData?.status || "Active",
     enrollmentType: studentData?.enrollmentType || "Returning Student",
     gender: studentData?.gender || "N/A",
-    dob: studentData?.dob && studentData.dob !== "N/A" ? new Date(studentData.dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A",
+    dob: studentData?.dob && studentData.dob !== "N/A" 
+      ? new Date(studentData.dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) 
+      : "N/A",
     passportPhoto: studentData?.passportPhoto 
       ? (studentData.passportPhoto.startsWith('http') 
           ? studentData.passportPhoto 
@@ -178,7 +194,7 @@ const StudentDashboard = () => {
   const breakdownData = [];
   if (finance.previousOutstanding > 0) {
     breakdownData.push({
-      term: "Arrears / Prior Term Debt",
+      term: "Prior Session / Term Arrears",
       amount: finance.previousOutstanding,
       status: "Debt Outstanding"
     });
@@ -187,7 +203,7 @@ const StudentDashboard = () => {
   if (finance.currentTermFee > 0) {
     const currentTermOutstanding = ledgerData?.currentTermOutstanding ?? Math.max(0, finance.currentTermFee - finance.totalPaid);
     breakdownData.push({
-      term: "Current Term Balance",
+      term: `Current Term (${profile.academicTerm})`,
       amount: currentTermOutstanding,
       status: currentTermOutstanding > 0 ? "Unpaid" : "Cleared"
     });
@@ -205,7 +221,7 @@ const StudentDashboard = () => {
   return (
     <div style={styles.dashboardContainer}>
       
-      {/* SIDEBAR / DRAWER */}
+      {/* SIDEBAR */}
       <StudentSidebar 
         profile={profile}
         navItems={navItems}
@@ -239,7 +255,7 @@ const StudentDashboard = () => {
           </div>
           <div style={styles.activeSessionBadge}>
             <div style={styles.pulseDot} />
-            <span>ACTIVE</span>
+            <span>{profile.academicSession}</span>
           </div>
         </header>
       )}
@@ -254,13 +270,12 @@ const StudentDashboard = () => {
         {activeTab === 'overview' && (
           <div style={styles.viewContainer}>
             
-            {/* Header Title */}
             <div style={styles.welcomeRow}>
               <div>
                 <h1 style={{ ...styles.welcomeText, fontSize: isMobile ? '18px' : '24px' }}>
                   Welcome back, <span style={{ color: 'var(--accent-primary)' }}>{profile.firstName}!</span>
                 </h1>
-                <p style={styles.welcomeSubtitle}>Here's your academic and financial overview.</p>
+                <p style={styles.welcomeSubtitle}>Here's your academic and financial overview for {profile.academicSession} ({profile.academicTerm}).</p>
               </div>
             </div>
 
@@ -291,8 +306,8 @@ const StudentDashboard = () => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px' }}>
                     <div style={{ background: 'var(--bg-input)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                      <span style={styles.inlineCardLabel}>Intake Session / Term</span>
-                      <p style={styles.inlineCardValue}>{profile.admissionSession} ({profile.admissionTerm})</p>
+                      <span style={styles.inlineCardLabel}>Current Session</span>
+                      <p style={styles.inlineCardValue}>{profile.academicSession}</p>
                     </div>
                     <div style={{ background: 'var(--bg-input)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                       <span style={styles.inlineCardLabel}>Current Term</span>
@@ -360,17 +375,17 @@ const StudentDashboard = () => {
                         </div>
                       </div>
                       <div style={styles.metaItemLineRow}>
-                        <Calendar size={14} color="var(--text-muted)" style={{ marginTop: '2px' }} />
+                        <Calendar size={14} color="var(--accent-primary)" style={{ marginTop: '2px' }} />
                         <div>
-                          <span style={styles.inlineCardLabel}>Current Academic Session</span>
-                          <p style={styles.inlineCardValue}>{profile.academicSession}</p>
+                          <span style={styles.inlineCardLabel}>Active Academic Session</span>
+                          <p style={{ ...styles.inlineCardValue, color: 'var(--accent-primary)', fontWeight: '800' }}>{profile.academicSession}</p>
                         </div>
                       </div>
                       <div style={styles.metaItemLineRow}>
-                        <Calendar size={14} color="var(--text-muted)" style={{ marginTop: '2px' }} />
+                        <Calendar size={14} color="var(--accent-primary)" style={{ marginTop: '2px' }} />
                         <div>
-                          <span style={styles.inlineCardLabel}>Current Academic Term</span>
-                          <p style={styles.inlineCardValue}>{profile.academicTerm}</p>
+                          <span style={styles.inlineCardLabel}>Active Academic Term</span>
+                          <p style={{ ...styles.inlineCardValue, color: 'var(--accent-primary)', fontWeight: '800' }}>{profile.academicTerm}</p>
                         </div>
                       </div>
                     </div>
@@ -409,7 +424,7 @@ const StudentDashboard = () => {
 
             {/* FINANCIAL SUMMARY CARDS GRID */}
             <div>
-              <h2 style={styles.sectionHeaderTitle}>FINANCIAL SUMMARY</h2>
+              <h2 style={styles.sectionHeaderTitle}>FINANCIAL SUMMARY ({profile.academicSession})</h2>
               <section style={{
                 ...styles.financialCardsGridContainer,
                 gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
@@ -457,7 +472,7 @@ const StudentDashboard = () => {
                   <table style={styles.dataGridTableSheet}>
                     <thead>
                       <tr>
-                        <th style={styles.tableHeadingCell}>TERM</th>
+                        <th style={styles.tableHeadingCell}>OBLIGATION ITEM</th>
                         <th style={styles.tableHeadingCell}>UNPAID</th>
                         <th style={styles.tableHeadingCell}>STATUS</th>
                       </tr>
@@ -507,7 +522,6 @@ const StudentDashboard = () => {
           </div>
         )}
 
-        {/* 🟢 FIXED: Active student object passed cleanly to AcademicRecords */}
         {activeTab === 'biodata' && <MyBiodataSheet studentData={profile} InstitutionLogo={InstitutionLogo} isMobile={isMobile} styles={styles} />}
         {activeTab === 'academics' && <AcademicRecords activeStudent={studentData || profile} />}
         {activeTab === 'payments' && <StudentFinance studentId={activeStudentId || profile.id} />}
