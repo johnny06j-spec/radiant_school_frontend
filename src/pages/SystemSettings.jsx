@@ -9,18 +9,17 @@ const SystemSettings = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // Options for dropdown selectors
   const sessionOptions = ['2025/2026', '2026/2027', '2027/2028', '2028/2029'];
   const termOptions = ['First Term', 'Second Term', 'Third Term'];
 
   useEffect(() => {
-    // Fetch current settings from backend on mount
     const fetchCurrentSettings = async () => {
       try {
         const { data } = await API.get('/system/config');
-        if (data.success && data.config) {
-          setSession(data.config.currentSession);
-          setTerm(data.config.currentTerm);
+        const config = data?.data || data?.config;
+        if (data?.success && config) {
+          if (config.currentSession) setSession(config.currentSession);
+          if (config.currentTerm) setTerm(config.currentTerm);
         }
       } catch (err) {
         console.error('Failed to fetch system settings:', err);
@@ -40,7 +39,8 @@ const SystemSettings = () => {
         currentTerm: term,
       });
 
-      setMessage({ type: 'success', text: 'System configurations updated successfully!' });
+      const successMsg = data?.message || 'System configurations updated successfully!';
+      setMessage({ type: 'success', text: successMsg });
     } catch (err) {
       const errorMsg =
         err.response?.data?.message ||
@@ -51,7 +51,6 @@ const SystemSettings = () => {
     }
   };
 
-  // Styling Variables (Using Dynamic CSS Theme Variables)
   const styles = {
     container: {
       maxWidth: '650px',

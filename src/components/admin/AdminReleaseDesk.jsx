@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle, RotateCcw, Download, Archive, 
-  Layers, X, RefreshCw, Building2, GraduationCap, AlertTriangle 
+  X, RefreshCw, Building2, GraduationCap, AlertTriangle 
 } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
 
@@ -10,7 +10,7 @@ const PRIMARY_CLASSES = ['KG 1', 'KG 2', 'Nursery 1', 'Nursery 2', 'Basic 1', 'B
 const SECONDARY_CLASSES = ['JSS 1', 'JSS 2', 'JSS 3', 'SSS 1', 'SSS 2', 'SSS 3'];
 
 export default function AdminReleaseDesk() {
-  const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'history'
+  const [activeTab, setActiveTab] = useState('queue');
   const [section, setSection] = useState('PRIMARY');
   const [className, setClassName] = useState('KG 1');
   
@@ -23,7 +23,6 @@ export default function AdminReleaseDesk() {
   const [releasing, setReleasing] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  // Return to HM / Principal Modal State
   const [returnModal, setReturnModal] = useState({ open: false, student: null, reason: '' });
 
   const classes = section === 'PRIMARY' ? PRIMARY_CLASSES : SECONDARY_CLASSES;
