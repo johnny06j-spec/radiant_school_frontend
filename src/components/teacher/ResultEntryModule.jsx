@@ -53,8 +53,9 @@ const ResultEntryModule = ({ profile }) => {
   const [savingDraft, setSavingDraft] = useState(false);
   const [actionMessage, setActionMessage] = useState({ type: '', text: '' });
 
-  // Status & Locking States
-  const [classStatus, setClassStatus] = useState('Pending Review');
+  // Status & Locking States (Class and Subject Specific)
+  const [classStatus, setClassStatus] = useState('Draft');
+  const [isGridLockedBackend, setIsGridLockedBackend] = useState(false);
   const [rejectionFeedback, setRejectionFeedback] = useState('');
 
   // Section determinations
@@ -63,8 +64,8 @@ const ResultEntryModule = ({ profile }) => {
                            (profile?.assignedClass || '').trim().toUpperCase().startsWith('NURSERY');
   const targetPrimaryTrackSubjects = isPreschoolClass ? PRE_SCHOOL_TRACK : BASIC_SCHOOL_TRACK;
 
-  // 🔒 Check lock condition
-  const isEntryLocked = ['Submitted', 'Approved by Principal', 'Released'].includes(classStatus);
+  // 🔒 Check strict lock condition per selected class and subject
+  const isEntryLocked = isGridLockedBackend || ['Submitted', 'Submitted for Review', 'Approved', 'Approved by Principal', 'Released'].includes(classStatus);
   const isReturnedForRevision = classStatus === 'Returned for Revision';
 
   // 1. Initialise Admin System Settings
@@ -97,7 +98,7 @@ const ResultEntryModule = ({ profile }) => {
     }
   }, [profile]);
 
-  // 2. Fetch Student Roster Grid
+  // 2. Fetch Student Roster Grid strictly scoped by Class & Subject
   useEffect(() => {
     if (!selectedAllocation || !selectedAllocation.className || fetchingSettings) return;
 
@@ -108,16 +109,17 @@ const ResultEntryModule = ({ profile }) => {
         const response = await axiosInstance.get('/teachers/fetch-grid', {
           params: {
             className: selectedAllocation.className.trim(), 
-            subjectName: selectedAllocation.subjectName,
-            term: activeTerm,
-            session: activeSession
+            subjectName: selectedAllocation.subjectName.trim(),
+            term: activeTerm.trim(),
+            session: activeSession.trim()
           }
         });
 
         if (response.data?.success && response.data?.data) {
           const gridPayload = response.data.data;
           
-          setClassStatus(gridPayload.status || 'Pending Review');
+          setClassStatus(response.data.status || gridPayload.status || 'Draft');
+          setIsGridLockedBackend(Boolean(response.data.isLocked));
           setRejectionFeedback(gridPayload.rejectionReason || '');
 
           const sanitized = (gridPayload.studentsScores || []).map(row => {
@@ -150,6 +152,8 @@ const ResultEntryModule = ({ profile }) => {
           setGridData(sanitized);
         } else {
           setGridData([]);
+          setClassStatus('Draft');
+          setIsGridLockedBackend(false);
         }
       } catch (err) {
         console.error("💥 SPREADSHEET PULL FAULT:", err);
@@ -170,14 +174,13 @@ const ResultEntryModule = ({ profile }) => {
     const updatedGrid = [...gridData];
     const numericVal = value === '' ? '' : parseInt(value, 10) || 0;
 
-    // Apply Upper Caps strictly per section rules
     let absoluteCap = 15;
     if (isSecondarySetup) {
-      if (field === 'ca1' || field === 'ca2' || field === 'project') absoluteCap = 15; // Secondary Tests/Proj = 15
-      if (field === 'exam') absoluteCap = 55;                                          // Secondary Exam = 55
+      if (field === 'ca1' || field === 'ca2' || field === 'project') absoluteCap = 15;
+      if (field === 'exam') absoluteCap = 55;
     } else {
-      if (field === 'ca1' || field === 'ca2') absoluteCap = 20;                        // Primary Tests = 20
-      if (field === 'exam') absoluteCap = 60;                                          // Primary Exam = 60
+      if (field === 'ca1' || field === 'ca2') absoluteCap = 20;
+      if (field === 'exam') absoluteCap = 60;
     }
 
     const standardValue = numericVal === '' ? 0 : Math.min(Math.max(numericVal, 0), absoluteCap);
@@ -227,11 +230,11 @@ const ResultEntryModule = ({ profile }) => {
 
     try {
       const response = await axiosInstance.post('/teachers/save-grid', {
-        className: selectedAllocation.className,
+        className: selectedAllocation.className.trim(),
         schoolSection: profile.schoolSection,
-        subjectName: selectedAllocation.subjectName,
-        term: activeTerm,
-        session: activeSession,
+        subjectName: selectedAllocation.subjectName.trim(),
+        term: activeTerm.trim(),
+        session: activeSession.trim(),
         studentsScores: structuralPayload
       });
 
