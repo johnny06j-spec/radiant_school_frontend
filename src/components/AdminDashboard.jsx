@@ -137,10 +137,26 @@ const AdminDashboard = () => {
         </header>
       )}
 
-      <div style={{ display: 'flex', flex: 1 }}>
-        {/* 🖥️ DESKTOP SIDEBAR PANEL */}
+      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+        {/* 🖥️ DESKTOP SIDEBAR PANEL (FIXED VIEWPORT LOCK) */}
         {!isMobile && (
-          <div style={{ width: '260px', background: 'var(--bg-surface)', padding: '1.75rem 1.25rem', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100vh', position: 'sticky', top: 0, boxSizing: 'border-box' }}>
+          <div style={{ 
+            width: '260px', 
+            background: 'var(--bg-surface)', 
+            padding: '1.75rem 1.25rem', 
+            borderRight: '1px solid var(--border-color)', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justify: 'space-between', 
+            height: '100vh', 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            bottom: 0,
+            zIndex: 100,
+            boxSizing: 'border-box',
+            overflowY: 'auto'
+          }}>
             <div>
               <h2 style={{ fontSize: '13px', color: '#ec4899', marginBottom: '1.5rem', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', paddingLeft: '0.5rem' }}>RADIANT ADMIN</h2>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -156,7 +172,7 @@ const AdminDashboard = () => {
               </ul>
             </div>
 
-            <div>
+            <div style={{ marginTop: '1.5rem' }}>
               {/* 🌙 / ☀️ THEME TOGGLE SWITCH ROW */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0.5rem', marginBottom: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -213,7 +229,7 @@ const AdminDashboard = () => {
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
+              justify: 'space-between',
               boxShadow: '4px 0 20px rgba(0,0,0,0.15)'
             }}>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -247,7 +263,14 @@ const AdminDashboard = () => {
         )}
 
         {/* DYNAMIC CONTENT CANVAS FRAME */}
-        <div style={{ flex: 1, padding: isMobile ? '1.25rem 1rem 2rem 1rem' : '2.5rem 3.5rem', boxSizing: 'border-box', overflowY: 'auto', width: '100%' }}>
+        <div style={{ 
+          flex: 1, 
+          marginLeft: isMobile ? 0 : '260px', 
+          padding: isMobile ? '1.25rem 1rem 2rem 1rem' : '2.5rem 3.5rem', 
+          boxSizing: 'border-box', 
+          overflowY: 'auto', 
+          width: isMobile ? '100%' : 'calc(100% - 260px)' 
+        }}>
           
           {/* 1. SYSTEM OVERVIEW VIEW TAB */}
           {activeTab === 'overview' && (
