@@ -1,10 +1,11 @@
 // src/components/admin/AdjustmentModal.jsx
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader2, ShieldAlert, Tag, Lock } from 'lucide-react';
+import API from '../../api/axiosInstance';
 
 const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
-  const [session, setSession] = useState('');
-  const [term, setTerm] = useState('');
+  const [session, setSession] = useState('2026/2027');
+  const [term, setTerm] = useState('First Term');
   const [reason, setReason] = useState('');
   
   const [items, setItems] = useState([]);
@@ -18,22 +19,14 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
 
     const fetchSystemSettings = async () => {
       setLoadingSettings(true);
-      const token = localStorage.getItem('token');
       try {
-        const response = await fetch('http://localhost:5000/api/system/config', {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
-          }
-        });
-        const result = await response.json();
-        
-        const configData = result?.data || result?.config || result;
+        const response = await API.get('/system/config');
+        const configData = response.data?.data || response.data?.config || response.data;
 
         if (configData?.currentSession) setSession(configData.currentSession);
         if (configData?.currentTerm) setTerm(configData.currentTerm);
       } catch (err) {
-        console.warn("⚠️ System settings fetch failed:", err);
+        console.warn("⚠️ System settings fetch failed in modal, using active defaults:", err);
       } finally {
         setLoadingSettings(false);
       }
@@ -42,27 +35,32 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
     fetchSystemSettings();
   }, [isOpen]);
 
-  // 🟢 2. Fetch student fee breakdown for the active Session & Term once resolved
+  // 🟢 2. Fetch student fee breakdown for active Session & Term once resolved
   useEffect(() => {
     if (!isOpen || !student || !session || !term) return;
 
     const fetchStudentFees = async () => {
       setLoadingItems(true);
-      const token = localStorage.getItem('token');
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/finance/student-ledger/${student._id}?term=${encodeURIComponent(term)}&session=${encodeURIComponent(session)}`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        const result = await response.json();
-        if (result.success && result.data) {
+        const studentId = student._id || student.id;
+        const response = await API.get(`/finance/student-ledger/${studentId}`, {
+          params: {
+            term: term.trim(),
+            session: session.trim()
+          }
+        });
+
+        const result = response.data;
+        if (result?.success && result?.data) {
           const mappedItems = (result.data.items || []).map(item => ({
             name: item.name,
-            amount: item.amount,
-            originalAmount: item.amount, // Baseline reference
+            amount: Number(item.amount) || 0,
+            originalAmount: Number(item.amount) || 0,
             isOriginal: true 
           }));
           setItems(mappedItems);
+        } else {
+          setItems([]);
         }
       } catch (err) {
         console.error("💥 Failed loading student fee rows:", err);
@@ -81,17 +79,14 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
     setItems([...items, { name: '', amount: '', originalAmount: 0, isOriginal: false }]);
   };
 
-  // 🗑️ Active Delete Button Handler
   const handleRemoveRow = (index) => {
     const targetItem = items[index];
     
     if (targetItem.isOriginal) {
-      // Dropping default class fee to 0 creates an automated discount/waiver
       const updated = [...items];
       updated[index].amount = 0;
       setItems(updated);
     } else {
-      // Remove custom admin row entirely
       setItems(items.filter((_, i) => i !== index));
     }
   };
@@ -103,7 +98,7 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
   };
 
   const calculatedStackTotal = items.reduce(
-    (sum, item) => sum + (typeof item.amount === 'string' ? Number(item.amount) : item.amount || 0), 
+    (sum, item) => sum + (typeof item.amount === 'string' ? Number(item.amount) || 0 : item.amount || 0), 
     0
   );
 
@@ -119,7 +114,7 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
     }
 
     setSubmitting(true);
-    const token = localStorage.getItem('token');
+    const studentId = student._id || student.id;
 
     try {
       await Promise.all(
@@ -129,31 +124,24 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
 
           if (item.isOriginal) {
             const difference = finalAmount - item.originalAmount;
-            if (difference === 0) return Promise.resolve(); // Unchanged default, skip
+            if (difference === 0) return Promise.resolve();
             
             if (difference < 0) {
               adjustmentType = 'Discount';
-              finalAmount = Math.abs(difference); // Deduction value
+              finalAmount = Math.abs(difference);
             } else {
               adjustmentType = 'Fee Increase';
-              finalAmount = difference; // Addition value
+              finalAmount = difference;
             }
           }
 
-          return fetch('http://localhost:5000/api/finance/adjustment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              studentId: student._id,
-              type: adjustmentType,
-              amount: finalAmount,
-              term,    // 🔒 System locked
-              session, // 🔒 System locked
-              reason: `[Matrix Modification for: ${item.name}] - ${reason}`
-            })
+          return API.post('/finance/adjustment', {
+            studentId,
+            type: adjustmentType,
+            amount: finalAmount,
+            term: term.trim(),
+            session: session.trim(),
+            reason: `[Matrix Modification for: ${item.name}] - ${reason}`
           });
         })
       );
@@ -164,7 +152,7 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
       setReason('');
     } catch (error) {
       console.error("💥 Failed saving student matrix overrides:", error);
-      alert("Server connection runtime fault committing profile overrides.");
+      alert(error.response?.data?.message || "Server connection runtime fault committing profile overrides.");
     } finally {
       setSubmitting(false);
     }
@@ -193,7 +181,7 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
         <header style={styles.header}>
           <div>
             <h3 style={styles.title}>Adjust Individual Student Fees</h3>
-            <p style={styles.subtitle}>Modifying layout matrices directly for {student.name}</p>
+            <p style={styles.subtitle}>Modifying layout matrices directly for {student.name || `${student.firstName || ''} ${student.surname || student.lastName || ''}`}</p>
           </div>
           <button onClick={onClose} style={styles.closeBtn}>
             <X size={18} />
@@ -211,7 +199,7 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
                 <Lock size={12} style={{ color: '#d97706', marginRight: '6px' }} />
                 <input
                   type="text"
-                  value={session || 'Loading...'}
+                  value={session}
                   disabled
                   style={styles.lockedInput}
                 />
@@ -226,7 +214,7 @@ const AdjustmentModal = ({ isOpen, onClose, student, onAdjustmentApplied }) => {
                 <Lock size={12} style={{ color: '#d97706', marginRight: '6px' }} />
                 <input
                   type="text"
-                  value={term || 'Loading...'}
+                  value={term}
                   disabled
                   style={styles.lockedInput}
                 />
