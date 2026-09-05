@@ -47,7 +47,6 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Route Guard & Viewport Resize Engine
   useEffect(() => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -62,7 +61,6 @@ const AdminDashboard = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch Live Database Metrics
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
@@ -114,11 +112,21 @@ const AdminDashboard = () => {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-main)', color: 'var(--text-primary)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    /* 🟢 FIX 1: Lock main container height strictly to 100vh and disable outer window scroll */
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100vh', 
+      width: '100vw', 
+      overflow: 'hidden', 
+      backgroundColor: 'var(--bg-main)', 
+      color: 'var(--text-primary)', 
+      fontFamily: 'system-ui, -apple-system, sans-serif' 
+    }}>
       
-      {/* 📱 MOBILE TOP HEADER BAR WITH HAMBURGER ICON */}
+      {/* 📱 MOBILE TOP HEADER BAR */}
       {isMobile && (
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', position: 'sticky', top: 0, zIndex: 1100 }}>
+        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', zIndex: 1100, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button 
               onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
@@ -137,8 +145,10 @@ const AdminDashboard = () => {
         </header>
       )}
 
-      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
-        {/* 🖥️ DESKTOP SIDEBAR PANEL (FIXED VIEWPORT LOCK) */}
+      {/* 🟢 FIX 2: Flex row with 100% height containment */}
+      <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }}>
+        
+        {/* 🖥️ DESKTOP SIDEBAR PANEL */}
         {!isMobile && (
           <div style={{ 
             width: '260px', 
@@ -148,13 +158,9 @@ const AdminDashboard = () => {
             display: 'flex', 
             flexDirection: 'column', 
             justify: 'space-between', 
-            height: '100vh', 
-            position: 'fixed', 
-            top: 0, 
-            left: 0, 
-            bottom: 0,
-            zIndex: 100,
+            height: '100%', 
             boxSizing: 'border-box',
+            flexShrink: 0,
             overflowY: 'auto'
           }}>
             <div>
@@ -172,9 +178,9 @@ const AdminDashboard = () => {
               </ul>
             </div>
 
-            <div style={{ marginTop: '1.5rem' }}>
+            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
               {/* 🌙 / ☀️ THEME TOGGLE SWITCH ROW */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0.5rem', marginBottom: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.25rem', marginBottom: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {isDark ? <Moon size={16} color="var(--text-primary)" /> : <Sun size={16} color="#d97706" />}
                   <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
@@ -197,7 +203,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* 📱 MOBILE SLIDE-OUT NAVIGATION DRAWER & BACKDROP */}
+        {/* 📱 MOBILE SLIDE-OUT NAVIGATION DRAWER */}
         {isMobile && mobileDrawerOpen && (
           <>
             <div 
@@ -211,7 +217,6 @@ const AdminDashboard = () => {
                 background: 'rgba(0, 0, 0, 0.4)',
                 backdropFilter: 'blur(3px)',
                 zIndex: 1040,
-                transition: 'opacity 0.2s ease'
               }}
             />
 
@@ -230,7 +235,6 @@ const AdminDashboard = () => {
               display: 'flex',
               flexDirection: 'column',
               justify: 'space-between',
-              boxShadow: '4px 0 20px rgba(0,0,0,0.15)'
             }}>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {menuItems.map((item) => {
@@ -262,17 +266,15 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {/* DYNAMIC CONTENT CANVAS FRAME */}
+        {/* 🟢 FIX 3: INDEPENDENT CONTENT SCROLL CANVAS */}
         <div style={{ 
           flex: 1, 
-          marginLeft: isMobile ? 0 : '260px', 
-          padding: isMobile ? '1.25rem 1rem 2rem 1rem' : '2.5rem 3.5rem', 
-          boxSizing: 'border-box', 
+          height: '100%', 
           overflowY: 'auto', 
-          width: isMobile ? '100%' : 'calc(100% - 260px)' 
+          padding: isMobile ? '1.25rem 1rem 2rem 1rem' : '2.5rem 3.5rem', 
+          boxSizing: 'border-box' 
         }}>
           
-          {/* 1. SYSTEM OVERVIEW VIEW TAB */}
           {activeTab === 'overview' && (
             <>
               <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -286,7 +288,6 @@ const AdminDashboard = () => {
                 </div>
               </header>
 
-              {/* Dashboard Metric Grid Blocks */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
                 <div style={{ background: 'var(--bg-surface)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: 'var(--shadow-subtle)' }}>
                   <div>
@@ -325,7 +326,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Quick Action Navigation Cards Section */}
               <div style={{ background: 'var(--bg-surface)', padding: '1.75rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-subtle)' }}>
                 <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '0.3px' }}>Quick Administration Actions</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
@@ -357,7 +357,6 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/* 2. ENROLL NEW STUDENT VIEW TAB */}
           {activeTab === 'enroll' && (
             <StudentRegistry 
               setActiveTab={setActiveTab} 
@@ -365,7 +364,6 @@ const AdminDashboard = () => {
             />
           )}
 
-          {/* 3. LIVE STUDENT DIRECTORY DATA STREAM LAYER */}
           {activeTab === 'directory' && (
             <StudentDirectory 
               setActiveTab={setActiveTab} 
@@ -376,7 +374,6 @@ const AdminDashboard = () => {
             />
           )}
 
-          {/* 4. INLINE EDIT STUDENT VIEW PANEL */}
           {activeTab === 'edit-student' && (
             <StudentRegistry 
               setActiveTab={setActiveTab} 
@@ -384,37 +381,30 @@ const AdminDashboard = () => {
             />
           )}
 
-          {/* 5. STAFF & TEACHER REGISTRY TAB */}
           {activeTab === 'teachers' && (
             <StaffRegistry />
           )}
 
-          {/* 6. SET CLASS FEES SCHEDULE MATRIX */}
           {activeTab === 'fees' && (
             <SetClassFees />
           )}
 
-          {/* 7. SYSTEM DEBTORS TRACKING LEDGER */}
           {activeTab === 'debtors' && (
             <DebtorsList />
           )}
 
-          {/* 8. LIVE PAYMENTS DESK WORKSPACE TRANSACTION CONSOLE */}
           {activeTab === 'payments' && (
             <PaymentsDesk />
           )}
 
-          {/* 9. SYSTEM SETTINGS DYNAMIC MANAGER PANEL */}
           {activeTab === 'settings' && (
             <SystemSettings />
           )}
 
-          {/* 10. LEDGER SIGN-OFF & RECEIPT VERIFICATION DESK */}
           {activeTab === 'ledger' && (
             <ReceiptVerifier />
           )}
 
-          {/* 11. PUBLISH & RELEASE RESULTS DESK */}
           {activeTab === 'release-results' && (
             <AdminReleaseDesk />
           )}
