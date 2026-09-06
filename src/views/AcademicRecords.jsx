@@ -23,7 +23,6 @@ const AcademicRecords = ({ activeStudent }) => {
     }
     setLoading(true);
     try {
-      // Direct call to teachers/my-results route
       const res = await axiosInstance.get(`/teachers/my-results/${activeStudent._id}`, {
         params: {
           term: selectedTerm,
@@ -58,7 +57,7 @@ const AcademicRecords = ({ activeStudent }) => {
         message: 'Could not connect to server to verify performance records.'
       });
     } finally {
-      setLoading(false); // Guarantees spinner stops
+      setLoading(false);
     }
   };
 
@@ -83,10 +82,18 @@ const AcademicRecords = ({ activeStudent }) => {
     }
   };
 
+  // Determine historical class from the review object, falling back to current active class
+  const resolvedHistoricalClass =
+    resultState.data?.className ||
+    resultState.data?.class ||
+    activeStudent?.currentClass ||
+    activeStudent?.assignedClass ||
+    'N/A';
+
   return (
     <div style={{ padding: '1.5rem', color: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
-      {/* HEADER & TERM SELECTOR */}
+      {/* HEADER & TERM/SESSION SELECTOR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>Academic Performance Records</h2>
@@ -113,6 +120,8 @@ const AcademicRecords = ({ activeStudent }) => {
           >
             <option value="2025/2026">2025/2026</option>
             <option value="2026/2027">2026/2027</option>
+            <option value="2027/2028">2027/2028</option>
+            <option value="2028/2029">2028/2029</option>
           </select>
         </div>
       </div>
@@ -169,7 +178,7 @@ const AcademicRecords = ({ activeStudent }) => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', backgroundColor: '#1e293b', padding: '1rem', borderRadius: '8px', fontSize: '12px' }}>
             <div>
               <span style={{ color: '#94a3b8' }}>Class:</span>{' '}
-              <strong>{activeStudent?.currentClass || activeStudent?.assignedClass}</strong>
+              <strong>{resolvedHistoricalClass}</strong>
             </div>
             <div>
               <span style={{ color: '#94a3b8' }}>Overall Average:</span>{' '}
