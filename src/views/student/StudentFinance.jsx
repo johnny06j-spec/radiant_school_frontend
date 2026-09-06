@@ -153,11 +153,16 @@ const StudentFinance = ({ studentId }) => {
     return Object.values(groupsMap);
   }, [profile, ledgerData]);
 
-  // DYNAMIC PAYMENTS HISTORY LEDGER
+  // 🟢 DYNAMIC PAYMENTS HISTORY LEDGER WITH FULL BACKWARD FALLBACK
   const pastPaymentsHistoryList = useMemo(() => {
-    if (!ledgerData || !ledgerData.paymentHistory) return [];
-    return ledgerData.paymentHistory;
-  }, [ledgerData]);
+    if (ledgerData?.paymentHistory && ledgerData.paymentHistory.length > 0) {
+      return ledgerData.paymentHistory;
+    }
+    if (profile?.paymentsHistory && profile.paymentsHistory.length > 0) {
+      return profile.paymentsHistory;
+    }
+    return [];
+  }, [ledgerData, profile]);
 
   const toggleAccordion = (id) => {
     setOpenAccordions((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -391,7 +396,7 @@ const StudentFinance = ({ studentId }) => {
               </thead>
               <tbody>
                 {pastPaymentsHistoryList.map((payment, index) => (
-                  <tr key={index} style={styles.tableBodyRow}>
+                  <tr key={payment.reference || index} style={styles.tableBodyRow}>
                     <td
                       style={{
                         ...styles.td,
@@ -403,13 +408,13 @@ const StudentFinance = ({ studentId }) => {
                       {payment.reference}
                     </td>
                     <td style={styles.tdPrimary}>
-                      {payment.session} - {payment.term}
+                      {payment.session || profile?.academicSession || '2026/2027'} - {payment.term || 'First Term'}
                     </td>
                     <td style={{ ...styles.td, color: 'var(--accent-success)', fontWeight: '700' }}>
                       ₦{Number(payment.amountPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td style={{ ...styles.td, color: 'var(--text-muted)', fontSize: '12px' }}>
-                      {new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}
+                      {new Date(payment.paidAt || payment.createdAt || Date.now()).toLocaleDateString()}
                     </td>
                     <td style={{ ...styles.td, textAlign: 'right' }}>
                       <button
