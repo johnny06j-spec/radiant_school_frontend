@@ -251,43 +251,43 @@ const ResultEntryModule = ({ profile }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
       
       {/* HEADER BAR */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', borderBottom: '1px solid #1e293b', paddingBottom: '16px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderBottom: '1px solid #1e293b', paddingBottom: '14px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: '#fff' }}>Academic Grading Registry</h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>Cross-class subject grading network workspace ledger.</p>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#fff' }}>Academic Grading Registry</h1>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>Cross-class subject grading network workspace ledger.</p>
         </div>
 
         <button 
           disabled={gridLoading || savingDraft || isEntryLocked} 
           onClick={handleSaveDraft}
           style={{
-            display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px',
-            borderRadius: '10px', backgroundColor: isEntryLocked ? '#334155' : '#1d4ed8', color: '#fff', fontSize: '12px',
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+            borderRadius: '8px', backgroundColor: isEntryLocked ? '#334155' : '#1d4ed8', color: '#fff', fontSize: '12px',
             fontWeight: 'bold', border: 'none', cursor: (gridLoading || savingDraft || isEntryLocked) ? 'not-allowed' : 'pointer'
           }}
         >
-          <Save size={15} /> {savingDraft ? 'SAVING...' : isEntryLocked ? 'ENTRY LOCKED' : 'SAVE DRAFT'}
+          <Save size={14} /> {savingDraft ? 'SAVING...' : isEntryLocked ? 'ENTRY LOCKED' : 'SAVE DRAFT'}
         </button>
       </div>
 
       {/* METADATA FILTERS PANEL */}
-      <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', padding: '16px', borderRadius: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+      <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', padding: '12px', borderRadius: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
         
         {/* TARGET CLASS & SUBJECT */}
         <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Target Classroom & Subject</label>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Target Classroom & Subject</label>
           {profile?.schoolSection === 'PRIMARY' ? (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <div style={{ width: '35%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', fontSize: '12px', fontWeight: 'bold', color: '#fff', textAlign: 'center' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ width: '35%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', padding: '6px', fontSize: '11px', fontWeight: 'bold', color: '#fff', textAlign: 'center' }}>
                 {profile.assignedClass}
               </div>
               <select
                 value={selectedAllocation?.subjectName || ''}
                 onChange={(e) => setSelectedAllocation({ className: profile.assignedClass, subjectName: e.target.value })}
-                style={{ width: '65%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', fontSize: '12px', fontWeight: 'bold', color: '#fff', outline: 'none' }}
+                style={{ width: '65%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', padding: '6px', fontSize: '11px', fontWeight: 'bold', color: '#fff', outline: 'none' }}
               >
                 {targetPrimaryTrackSubjects.map((subject, idx) => (
                   <option key={idx} value={subject}>{subject}</option>
@@ -298,7 +298,7 @@ const ResultEntryModule = ({ profile }) => {
             <select 
               value={selectedAllocation ? JSON.stringify(selectedAllocation) : ''} 
               onChange={(e) => setSelectedAllocation(JSON.parse(e.target.value))}
-              style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', fontSize: '13px', fontWeight: 'bold', color: '#fff', outline: 'none' }}
+              style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', padding: '6px', fontSize: '12px', fontWeight: 'bold', color: '#fff', outline: 'none' }}
             >
               {profile?.subjectAllocations?.map((alloc, idx) => (
                 <option key={idx} value={JSON.stringify(alloc)}>
@@ -311,30 +311,30 @@ const ResultEntryModule = ({ profile }) => {
 
         {/* ACADEMIC TERM */}
         <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
-            <Lock size={11} style={{ color: '#fbbf24' }} /> Academic Term
+          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
+            <Lock size={10} style={{ color: '#fbbf24' }} /> Academic Term
           </label>
-          <div style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span>{activeTerm}</span>
-            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>Active</span>
+            <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>Active</span>
           </div>
         </div>
 
         {/* SESSION YEAR */}
         <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
-            <Lock size={11} style={{ color: '#fbbf24' }} /> Session Year
+          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
+            <Lock size={10} style={{ color: '#fbbf24' }} /> Session Year
           </label>
-          <div style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span>{activeSession}</span>
-            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>Active</span>
+            <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>Active</span>
           </div>
         </div>
 
         {/* CURRICULUM TRACK */}
         <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Curriculum Track</label>
-          <div style={{ backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '9px 12px', fontSize: '12px', fontWeight: 'bold', color: '#c084fc', textAlign: 'center', textTransform: 'uppercase' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Curriculum Track</label>
+          <div style={{ backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', fontWeight: 'bold', color: '#c084fc', textAlign: 'center', textTransform: 'uppercase' }}>
             {profile?.schoolSection} Matrix
           </div>
         </div>
@@ -342,82 +342,82 @@ const ResultEntryModule = ({ profile }) => {
 
       {/* LOCK BANNER / REJECTION NOTIFICATION */}
       {isEntryLocked && (
-        <div style={{ padding: '12px 16px', borderRadius: '8px', fontSize: '13px', backgroundColor: 'rgba(59, 130, 246, 0.15)', border: '1px solid #3b82f6', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Lock size={16} />
+        <div style={{ padding: '10px 14px', borderRadius: '8px', fontSize: '12px', backgroundColor: 'rgba(59, 130, 246, 0.15)', border: '1px solid #3b82f6', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Lock size={14} />
           <span><strong>RESULT ENTRY LOCKED:</strong> Broad sheet scores submitted to Principal for sign-off review.</span>
         </div>
       )}
 
       {isReturnedForRevision && (
-        <div style={{ padding: '12px 16px', borderRadius: '8px', fontSize: '13px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#f87171', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
-            <AlertCircle size={16} /> RETURNED BY PRINCIPAL FOR REVISION
+        <div style={{ padding: '10px 14px', borderRadius: '8px', fontSize: '12px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#f87171', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
+            <AlertCircle size={14} /> RETURNED BY PRINCIPAL FOR REVISION
           </div>
-          {rejectionFeedback && <p style={{ margin: 0, fontSize: '12px', color: '#fff', fontStyle: 'italic' }}>"{rejectionFeedback}"</p>}
+          {rejectionFeedback && <p style={{ margin: 0, fontSize: '11px', color: '#fff', fontStyle: 'italic' }}>"{rejectionFeedback}"</p>}
         </div>
       )}
 
       {/* FEEDBACK BANNER */}
       {actionMessage.text && (
-        <div style={{ padding: '12px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: actionMessage.type === 'error' ? '#450a0a' : '#064e3b', border: `1px solid ${actionMessage.type === 'error' ? '#991b1b' : '#10b981'}`, color: actionMessage.type === 'error' ? '#f87171' : '#34d399' }}>
-          {actionMessage.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+        <div style={{ padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: actionMessage.type === 'error' ? '#450a0a' : '#064e3b', border: `1px solid ${actionMessage.type === 'error' ? '#991b1b' : '#10b981'}`, color: actionMessage.type === 'error' ? '#f87171' : '#34d399' }}>
+          {actionMessage.type === 'success' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
           {actionMessage.text}
         </div>
       )}
 
       {/* TABLE WORKSPACE */}
       {gridLoading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontFamily: 'monospace', fontSize: '13px' }}>
-          <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px auto', display: 'block' }} />
+        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontFamily: 'monospace', fontSize: '12px' }}>
+          <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px auto', display: 'block' }} />
           Synchronizing Student Roster Data...
         </div>
       ) : gridData.length === 0 ? (
-        <div style={{ padding: '40px', backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', textAlign: 'center', color: '#64748b', fontSize: '13px', fontStyle: 'italic' }}>
+        <div style={{ padding: '30px', backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', textAlign: 'center', color: '#64748b', fontSize: '12px', fontStyle: 'italic' }}>
           No active student rows found for this classroom track setup.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', overflow: 'hidden' }}>
           
-          <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: 'rgba(30, 58, 138, 0.2)', border: '1px solid rgba(30, 58, 138, 0.4)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <BookOpen size={18} style={{ color: '#60a5fa' }} />
-            <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+          <div style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: 'rgba(30, 58, 138, 0.2)', border: '1px solid rgba(30, 58, 138, 0.4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BookOpen size={16} style={{ color: '#60a5fa', flexShrink: 0 }} />
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
               Recording scores for <strong style={{ color: '#fff' }}>{selectedAllocation?.subjectName}</strong> in <strong style={{ color: '#fff' }}>{selectedAllocation?.className}</strong> ({activeTerm}, {activeSession}).
               Structure: <strong style={{ color: '#c084fc', fontFamily: 'monospace' }}>{isSecondarySetup ? 'Secondary [15+15+15+55]' : 'Primary [20+20+60]'}</strong>.
             </span>
           </div>
 
-          <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1050px' }}>
+          <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', width: '100%', overflow: 'hidden' }}>
+            <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#05080f', borderBottom: '1px solid #1e293b', color: '#64748b', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                    <th style={{ padding: '14px 16px', position: 'sticky', left: 0, backgroundColor: '#05080f', zIndex: 10 }}>Student Particulars</th>
+                  <tr style={{ backgroundColor: '#05080f', borderBottom: '1px solid #1e293b', color: '#64748b', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '10px 12px', minWidth: '130px' }}>Student Particulars</th>
                     
                     {/* TEST 1 */}
-                    <th style={{ padding: '14px', textAlign: 'center', width: '90px' }}>{isSecondarySetup ? 'TEST 1 (15)' : 'TEST 1 (20)'}</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '65px' }}>{isSecondarySetup ? 'TEST 1 (15)' : 'TEST 1 (20)'}</th>
                     
                     {/* TEST 2 */}
-                    <th style={{ padding: '14px', textAlign: 'center', width: '90px' }}>{isSecondarySetup ? 'TEST 2 (15)' : 'TEST 2 (20)'}</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '65px' }}>{isSecondarySetup ? 'TEST 2 (15)' : 'TEST 2 (20)'}</th>
                     
                     {/* PROJECT (Secondary Only) */}
-                    {isSecondarySetup && <th style={{ padding: '14px', textAlign: 'center', width: '90px' }}>PROJ (15)</th>}
+                    {isSecondarySetup && <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '65px' }}>PROJ (15)</th>}
                     
                     {/* EXAM */}
-                    <th style={{ padding: '14px', textAlign: 'center', width: '90px' }}>{isSecondarySetup ? 'EXAM (55)' : 'EXAM (60)'}</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '65px' }}>{isSecondarySetup ? 'EXAM (55)' : 'EXAM (60)'}</th>
                     
                     {/* TOTAL (A) */}
-                    <th style={{ padding: '14px', textAlign: 'center', width: '100px' }}>TOTAL (100) A</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '75px' }}>TOTAL A</th>
 
                     {/* Dynamic Cumulative Columns for 2nd & 3rd Term */}
                     {activeTerm !== 'First Term' && (
                       <>
-                        <th style={{ padding: '14px', textAlign: 'center', width: '120px', color: '#c084fc', borderLeft: '1px solid #1e293b' }}>CUM B.F (100) B</th>
-                        <th style={{ padding: '14px', textAlign: 'center', width: '120px', color: '#c084fc', backgroundColor: 'rgba(88, 28, 135, 0.15)' }}>TOTAL AVG (A+B)/2</th>
+                        <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '75px', color: '#c084fc', borderLeft: '1px solid #1e293b' }}>CUM B.F B</th>
+                        <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '85px', color: '#c084fc', backgroundColor: 'rgba(88, 28, 135, 0.15)' }}>AVG (A+B)/2</th>
                       </>
                     )}
 
-                    <th style={{ padding: '14px', textAlign: 'center', width: '70px' }}>GRADE</th>
-                    <th style={{ padding: '14px', textAlign: 'center', width: '120px' }}>REMARK</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '55px' }}>GRADE</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '75px' }}>REMARK</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -425,60 +425,60 @@ const ResultEntryModule = ({ profile }) => {
                     const evaluated = evaluateGradeAndRemark(activeTerm !== 'First Term' ? row.averageScore : row.totalScore, isSecondarySetup);
 
                     return (
-                      <tr key={row.id || idx} style={{ borderBottom: '1px solid #1e293b', fontSize: '13px' }}>
-                        <td style={{ padding: '12px 16px', position: 'sticky', left: 0, backgroundColor: '#070c14', zIndex: 10 }}>
-                          <div style={{ fontWeight: 'bold', color: '#fff' }}>{row.name || row.studentName || 'Unknown Student'}</div>
-                          <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#64748b' }}>{row.admissionNo || `ID-#${idx}`}</div>
+                      <tr key={row.id || idx} style={{ borderBottom: '1px solid #1e293b', fontSize: '12px' }}>
+                        <td style={{ padding: '10px 12px', backgroundColor: '#070c14' }}>
+                          <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '11px' }}>{row.name || row.studentName || 'Unknown Student'}</div>
+                          <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#64748b' }}>{row.admissionNo || `ID-#${idx}`}</div>
                         </td>
 
                         {/* TEST 1 */}
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                          <input type="number" min="0" max={isSecondarySetup ? 15 : 20} disabled={isEntryLocked} value={row.ca1 ?? ''} onChange={(e) => handleScoreChange(idx, 'ca1', e.target.value)} style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
+                        <td style={{ padding: '6px', textAlign: 'center' }}>
+                          <input type="number" min="0" max={isSecondarySetup ? 15 : 20} disabled={isEntryLocked} value={row.ca1 ?? ''} onChange={(e) => handleScoreChange(idx, 'ca1', e.target.value)} style={{ width: '48px', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
                         </td>
 
                         {/* TEST 2 */}
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                          <input type="number" min="0" max={isSecondarySetup ? 15 : 20} disabled={isEntryLocked} value={row.ca2 ?? ''} onChange={(e) => handleScoreChange(idx, 'ca2', e.target.value)} style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
+                        <td style={{ padding: '6px', textAlign: 'center' }}>
+                          <input type="number" min="0" max={isSecondarySetup ? 15 : 20} disabled={isEntryLocked} value={row.ca2 ?? ''} onChange={(e) => handleScoreChange(idx, 'ca2', e.target.value)} style={{ width: '48px', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
                         </td>
 
                         {/* PROJECT (Secondary Only) */}
                         {isSecondarySetup && (
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <input type="number" min="0" max="15" disabled={isEntryLocked} value={row.project ?? ''} onChange={(e) => handleScoreChange(idx, 'project', e.target.value)} style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
+                          <td style={{ padding: '6px', textAlign: 'center' }}>
+                            <input type="number" min="0" max="15" disabled={isEntryLocked} value={row.project ?? ''} onChange={(e) => handleScoreChange(idx, 'project', e.target.value)} style={{ width: '48px', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
                           </td>
                         )}
 
                         {/* EXAM */}
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                          <input type="number" min="0" max={isSecondarySetup ? 55 : 60} disabled={isEntryLocked} value={row.exam ?? ''} onChange={(e) => handleScoreChange(idx, 'exam', e.target.value)} style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
+                        <td style={{ padding: '6px', textAlign: 'center' }}>
+                          <input type="number" min="0" max={isSecondarySetup ? 55 : 60} disabled={isEntryLocked} value={row.exam ?? ''} onChange={(e) => handleScoreChange(idx, 'exam', e.target.value)} style={{ width: '48px', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
                         </td>
 
                         {/* TOTAL (A) */}
-                        <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: '900', fontFamily: 'monospace', color: '#60a5fa' }}>
+                        <td style={{ padding: '10px 6px', textAlign: 'center', fontWeight: '900', fontFamily: 'monospace', color: '#60a5fa' }}>
                           {row.totalScore || 0}%
                         </td>
 
                         {/* CUMULATIVE SECOND & THIRD TERM COLUMNS */}
                         {activeTerm !== 'First Term' && (
                           <>
-                            <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 'bold', color: '#c084fc', borderLeft: '1px solid #1e293b' }}>
+                            <td style={{ padding: '10px 6px', textAlign: 'center', fontWeight: 'bold', color: '#c084fc', borderLeft: '1px solid #1e293b' }}>
                               {row.broughtForward ?? 0}%
                             </td>
-                            <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: '900', color: '#38bdf8', backgroundColor: 'rgba(88, 28, 135, 0.1)' }}>
+                            <td style={{ padding: '10px 6px', textAlign: 'center', fontWeight: '900', color: '#38bdf8', backgroundColor: 'rgba(88, 28, 135, 0.1)' }}>
                               {row.averageScore ?? 0}%
                             </td>
                           </>
                         )}
 
                         {/* GRADE */}
-                        <td style={{ padding: '12px 10px', textAlign: 'center' }}>
-                          <span style={{ padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px', fontFamily: 'monospace', backgroundColor: evaluated.bg, border: `1px solid ${evaluated.border}`, color: evaluated.color }}>
+                        <td style={{ padding: '10px 6px', textAlign: 'center' }}>
+                          <span style={{ padding: '3px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', fontFamily: 'monospace', backgroundColor: evaluated.bg, border: `1px solid ${evaluated.border}`, color: evaluated.color }}>
                             {evaluated.grade}
                           </span>
                         </td>
 
                         {/* REMARK */}
-                        <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', color: evaluated.color }}>
+                        <td style={{ padding: '10px 6px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', color: evaluated.color }}>
                           {evaluated.remark}
                         </td>
                       </tr>
