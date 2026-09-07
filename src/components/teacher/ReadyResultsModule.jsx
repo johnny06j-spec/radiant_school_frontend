@@ -343,46 +343,46 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
   const computedOverall = getOverallGradeAndRemark(overallAverage, profile?.schoolSection);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
       
       {/* HEADER */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', borderBottom: '1px solid #1e293b', paddingBottom: '16px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderBottom: '1px solid #1e293b', paddingBottom: '16px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: '#fff' }}>Result Review & Approval</h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>Review student results, add your remark, and approve for final release.</p>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#fff' }}>Result Review & Approval</h1>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>Review student results, add your remark, and approve for final release.</p>
         </div>
 
         <div>
           {isOfficialClassTeacherForSelectedClass ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', color: '#34d399', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
-              <ShieldCheck size={16} /> Class Teacher (Full Access)
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', color: '#34d399', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}>
+              <ShieldCheck size={15} /> Class Teacher (Full Access)
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#f87171', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
-              <ShieldAlert size={16} /> Subject Teacher (View Only)
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#f87171', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}>
+              <ShieldAlert size={15} /> Subject Teacher (View Only)
             </div>
           )}
         </div>
       </div>
 
       {/* CONTROLS BAR */}
-      <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', padding: '16px', borderRadius: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+      <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', padding: '12px', borderRadius: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
         <div>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>ACADEMIC TERM</label>
-          <div style={{ padding: '8px', color: '#38bdf8', fontWeight: 'bold' }}>{activeTerm}</div>
+          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>ACADEMIC TERM</label>
+          <div style={{ padding: '6px 0', color: '#38bdf8', fontWeight: 'bold', fontSize: '13px' }}>{activeTerm}</div>
         </div>
         
         <div>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>SESSION YEAR</label>
-          <div style={{ padding: '8px', color: '#38bdf8', fontWeight: 'bold' }}>{activeSession}</div>
+          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>SESSION YEAR</label>
+          <div style={{ padding: '6px 0', color: '#38bdf8', fontWeight: 'bold', fontSize: '13px' }}>{activeSession}</div>
         </div>
 
         <div>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>SELECT CLASS</label>
+          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>SELECT CLASS</label>
           <select 
             value={selectedClass} 
             onChange={(e) => setSelectedClass(e.target.value)}
-            style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #38bdf8', borderRadius: '8px', padding: '8px', color: '#fff', fontWeight: 'bold', outline: 'none' }}
+            style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #38bdf8', borderRadius: '8px', padding: '8px', color: '#fff', fontWeight: 'bold', outline: 'none', fontSize: '12px' }}
           >
             {availableClasses.map((cls, idx) => (
               <option key={idx} value={cls}>
@@ -393,12 +393,12 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
         </div>
 
         <div>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>SELECT STUDENT</label>
+          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>SELECT STUDENT</label>
           <select 
             value={selectedStudentId} 
             onChange={(e) => setSelectedStudentId(e.target.value)}
             disabled={studentsList.length === 0 || loadingRoster}
-            style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', color: '#fff', fontWeight: 'bold', outline: 'none' }}
+            style={{ width: '100%', backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', color: '#fff', fontWeight: 'bold', outline: 'none', fontSize: '12px' }}
           >
             {loadingRoster ? (
               <option value="">Loading Roster...</option>
@@ -416,98 +416,104 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
       </div>
 
       {actionMessage.text && (
-        <div style={{ padding: '12px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', backgroundColor: actionMessage.type === 'error' ? '#450a0a' : '#064e3b', color: actionMessage.type === 'error' ? '#f87171' : '#34d399', border: `1px solid ${actionMessage.type === 'error' ? '#991b1b' : '#10b981'}` }}>
+        <div style={{ padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', backgroundColor: actionMessage.type === 'error' ? '#450a0a' : '#064e3b', color: actionMessage.type === 'error' ? '#f87171' : '#34d399', border: `1px solid ${actionMessage.type === 'error' ? '#991b1b' : '#10b981'}` }}>
           {actionMessage.text}
         </div>
       )}
 
-      {/* SUBJECTS & SCORES */}
-      <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-          <h3 style={{ margin: 0, fontSize: '14px', color: '#60a5fa' }}>SUBJECTS & SCORES ({profile?.schoolSection || 'PRIMARY'})</h3>
+      {/* SUBJECTS & SCORES CARD */}
+      <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '12px 14px', width: '100%', overflow: 'hidden' }}>
+        
+        {/* RESPONSIVE SCORE BANNER */}
+        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px' }}>
+          <h3 style={{ margin: 0, fontSize: '13px', color: '#60a5fa', textTransform: 'uppercase' }}>SUBJECTS & SCORES ({profile?.schoolSection || 'PRIMARY'})</h3>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px', fontWeight: 'bold', color: '#c084fc' }}>
-            <span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 'bold', color: '#c084fc' }}>
+            <span style={{ whiteSpace: 'nowrap' }}>
               Overall Term Average: <span style={{ color: '#38bdf8' }}>{overallAverage}%</span>
             </span>
             <span style={{ 
               backgroundColor: 'rgba(56, 189, 248, 0.15)', 
               border: '1px solid #38bdf8', 
               color: '#38bdf8', 
-              padding: '2px 10px', 
+              padding: '3px 8px', 
               borderRadius: '6px', 
-              fontSize: '12px',
+              fontSize: '11px',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '4px',
+              whiteSpace: 'nowrap'
             }}>
-              Overall Grade: <strong style={{ color: '#fff', fontSize: '14px' }}>{computedOverall.grade}</strong> ({computedOverall.remark})
+              Overall Grade: <strong style={{ color: '#fff', fontSize: '13px' }}>{computedOverall.grade}</strong> ({computedOverall.remark})
             </span>
           </div>
         </div>
 
+        {/* SCROLLABLE TABLE WRAPPER */}
         {loadingReview ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
-            <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px auto', display: 'block' }} />
+          <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+            <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px auto', display: 'block' }} />
             Consolidating subject scores...
           </div>
         ) : subjectScores.length === 0 ? (
-          <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontStyle: 'italic', fontSize: '13px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontStyle: 'italic', fontSize: '12px' }}>
             No recorded subject scores found for this student in {selectedClass}.
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #1e293b', color: '#64748b', fontSize: '11px', textTransform: 'uppercase' }}>
-                <th style={{ padding: '10px' }}>Subject</th>
-                <th style={{ padding: '10px', textAlign: 'center' }}>Test 1</th>
-                <th style={{ padding: '10px', textAlign: 'center' }}>Test 2</th>
-                {!isPrimary && <th style={{ padding: '10px', textAlign: 'center' }}>Proj</th>}
-                <th style={{ padding: '10px', textAlign: 'center' }}>Exam</th>
-                <th style={{ padding: '10px', textAlign: 'center' }}>{showCumulative ? 'Total (100) A' : 'Total (100)'}</th>
-                {showCumulative && <th style={{ padding: '10px', textAlign: 'center', color: '#c084fc' }}>Cum B.F (100) B</th>}
-                {showCumulative && <th style={{ padding: '10px', textAlign: 'center', color: '#38bdf8' }}>TOTAL AVG (A+B)/2</th>}
-                <th style={{ padding: '10px', textAlign: 'center' }}>Grade</th>
-                <th style={{ padding: '10px', textAlign: 'center' }}>Remark</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subjectScores.map((row, idx) => {
-                const evaluated = getOverallGradeAndRemark(row.totalScore, profile?.schoolSection);
-                return (
-                  <tr key={idx} style={{ borderBottom: '1px solid #1e293b' }}>
-                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#fff' }}>{row.subject}</td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>{row.ca1}</td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>{row.ca2}</td>
-                    {!isPrimary && <td style={{ padding: '10px', textAlign: 'center' }}>{row.project}</td>}
-                    <td style={{ padding: '10px', textAlign: 'center' }}>{row.exam}</td>
-                    <td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold' }}>{row.totalScore}%</td>
-                    {showCumulative && <td style={{ padding: '10px', textAlign: 'center', color: '#c084fc', fontWeight: 'bold' }}>{row.broughtForward}%</td>}
-                    {showCumulative && <td style={{ padding: '10px', textAlign: 'center', color: '#38bdf8', fontWeight: 'bold' }}>{row.averageScore}%</td>}
-                    <td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold' }}>{evaluated.grade}</td>
-                    <td style={{ padding: '10px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#34d399' }}>{evaluated.remark}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #1e293b', color: '#64748b', fontSize: '10px', textTransform: 'uppercase' }}>
+                  <th style={{ padding: '8px 6px', minWidth: '110px' }}>Subject</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'center', minWidth: '45px' }}>Test 1</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'center', minWidth: '45px' }}>Test 2</th>
+                  {!isPrimary && <th style={{ padding: '8px 6px', textAlign: 'center', minWidth: '45px' }}>Proj</th>}
+                  <th style={{ padding: '8px 6px', textAlign: 'center', minWidth: '45px' }}>Exam</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'center', minWidth: '70px' }}>{showCumulative ? 'Total (100) A' : 'Total (100)'}</th>
+                  {showCumulative && <th style={{ padding: '8px 6px', textAlign: 'center', color: '#c084fc', minWidth: '75px' }}>Cum B.F B</th>}
+                  {showCumulative && <th style={{ padding: '8px 6px', textAlign: 'center', color: '#38bdf8', minWidth: '85px' }}>TOTAL AVG</th>}
+                  <th style={{ padding: '8px 6px', textAlign: 'center', minWidth: '45px' }}>Grade</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'center', minWidth: '65px' }}>Remark</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subjectScores.map((row, idx) => {
+                  const evaluated = getOverallGradeAndRemark(row.totalScore, profile?.schoolSection);
+                  return (
+                    <tr key={idx} style={{ borderBottom: '1px solid #1e293b' }}>
+                      <td style={{ padding: '8px 6px', fontWeight: 'bold', color: '#fff', fontSize: '11px' }}>{row.subject}</td>
+                      <td style={{ padding: '8px 6px', textAlign: 'center' }}>{row.ca1}</td>
+                      <td style={{ padding: '8px 6px', textAlign: 'center' }}>{row.ca2}</td>
+                      {!isPrimary && <td style={{ padding: '8px 6px', textAlign: 'center' }}>{row.project}</td>}
+                      <td style={{ padding: '8px 6px', textAlign: 'center' }}>{row.exam}</td>
+                      <td style={{ padding: '8px 6px', textAlign: 'center', fontWeight: 'bold' }}>{row.totalScore}%</td>
+                      {showCumulative && <td style={{ padding: '8px 6px', textAlign: 'center', color: '#c084fc', fontWeight: 'bold' }}>{row.broughtForward}%</td>}
+                      {showCumulative && <td style={{ padding: '8px 6px', textAlign: 'center', color: '#38bdf8', fontWeight: 'bold' }}>{row.averageScore}%</td>}
+                      <td style={{ padding: '8px 6px', textAlign: 'center', fontWeight: 'bold' }}>{evaluated.grade}</td>
+                      <td style={{ padding: '8px 6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#34d399' }}>{evaluated.remark}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {/* DOMAINS & REMARKS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '14px' }}>
         
         {/* CHARACTER DEVELOPMENT */}
-        <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', opacity: isReadOnly ? 0.7 : 1 }}>
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#c084fc' }}>CHARACTER DEVELOPMENT</h4>
+        <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '14px', opacity: isReadOnly ? 0.7 : 1 }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#c084fc' }}>CHARACTER DEVELOPMENT</h4>
           {Object.keys(characterDev).map((key) => (
             <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1')}</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1')}</span>
               <select 
                 disabled={isReadOnly}
                 value={characterDev[key]} 
                 onChange={(e) => setCharacterDev({ ...characterDev, [key]: e.target.value })}
-                style={{ backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', color: '#38bdf8', padding: '4px 8px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
+                style={{ backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', color: '#38bdf8', padding: '3px 6px', fontSize: '11px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
               >
                 {activeRatingScale.map(r => <option key={r} value={r}>{r} - {getRatingLabelFn(r)}</option>)}
               </select>
@@ -516,16 +522,16 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
         </div>
 
         {/* PRACTICAL SKILLS */}
-        <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', opacity: isReadOnly ? 0.7 : 1 }}>
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#c084fc' }}>PRACTICAL SKILLS</h4>
+        <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '14px', opacity: isReadOnly ? 0.7 : 1 }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#c084fc' }}>PRACTICAL SKILLS</h4>
           {Object.keys(practicalSkills).map((key) => (
             <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'capitalize' }}>{key}</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'capitalize' }}>{key}</span>
               <select 
                 disabled={isReadOnly}
                 value={practicalSkills[key]} 
                 onChange={(e) => setPracticalSkills({ ...practicalSkills, [key]: e.target.value })}
-                style={{ backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', color: '#38bdf8', padding: '4px 8px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
+                style={{ backgroundColor: '#0b111e', border: '1px solid #1e293b', borderRadius: '6px', color: '#38bdf8', padding: '3px 6px', fontSize: '11px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
               >
                 {activeRatingScale.map(r => <option key={r} value={r}>{r} - {getRatingLabelFn(r)}</option>)}
               </select>
@@ -534,14 +540,14 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
         </div>
 
         {/* REMARKS PANEL */}
-        <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h4 style={{ margin: 0, fontSize: '13px', color: '#c084fc' }}>STUDENT REMARKS & APPROVAL</h4>
+        <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <h4 style={{ margin: 0, fontSize: '12px', color: '#c084fc' }}>STUDENT REMARKS & APPROVAL</h4>
           
           <div>
-            <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>TEACHER'S REMARK</label>
+            <label style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>TEACHER'S REMARK</label>
             <textarea 
               disabled={isReadOnly}
-              rows={4}
+              rows={3}
               value={teacherRemark}
               onChange={(e) => setTeacherRemark(e.target.value)}
               placeholder={
@@ -551,18 +557,18 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
                   ? "Remarks locked (Subject Teacher - View Only)" 
                   : "Write your remark about this student's overall performance..."
               }
-              style={{ width: '100%', backgroundColor: isReadOnly ? '#05080f' : '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', color: isReadOnly ? '#64748b' : '#fff', fontSize: '12px', marginTop: '6px', cursor: isReadOnly ? 'not-allowed' : 'text' }}
+              style={{ width: '100%', backgroundColor: isReadOnly ? '#05080f' : '#0b111e', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', color: isReadOnly ? '#64748b' : '#fff', fontSize: '11px', marginTop: '4px', cursor: isReadOnly ? 'not-allowed' : 'text' }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>HEADMASTER / HM REMARK (READ ONLY)</label>
+            <label style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>HEADMASTER REMARK (READ ONLY)</label>
             <textarea 
               disabled
-              rows={3}
+              rows={2}
               value={reviewData?.principalRemark || ''}
               placeholder="Pending Headmaster review..."
-              style={{ width: '100%', backgroundColor: '#05080f', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', color: '#64748b', fontSize: '12px', marginTop: '6px', cursor: 'not-allowed' }}
+              style={{ width: '100%', backgroundColor: '#05080f', border: '1px solid #1e293b', borderRadius: '8px', padding: '8px', color: '#64748b', fontSize: '11px', marginTop: '4px', cursor: 'not-allowed' }}
             />
           </div>
         </div>
@@ -570,21 +576,21 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
       </div>
 
       {/* ACTIONS */}
-      <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', borderTop: '1px solid #1e293b', paddingTop: '16px' }}>
+      <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid #1e293b', paddingTop: '14px', flexWrap: 'wrap' }}>
         <button 
           disabled={isReadOnly || saving}
           onClick={() => handleSaveOrSubmit('DRAFT')}
-          style={{ padding: '10px 18px', borderRadius: '8px', backgroundColor: '#1e293b', color: '#fff', fontWeight: 'bold', border: 'none', cursor: (isReadOnly || saving) ? 'not-allowed' : 'pointer', opacity: (isReadOnly || saving) ? 0.5 : 1 }}
+          style={{ padding: '8px 14px', borderRadius: '8px', backgroundColor: '#1e293b', color: '#fff', fontWeight: 'bold', border: 'none', fontSize: '12px', cursor: (isReadOnly || saving) ? 'not-allowed' : 'pointer', opacity: (isReadOnly || saving) ? 0.5 : 1 }}
         >
-          {saving ? 'Saving...' : 'Save Review Draft'}
+          {saving ? 'Saving...' : 'Save Draft'}
         </button>
 
         <button 
           disabled={isReadOnly || saving}
           onClick={() => handleSaveOrSubmit('SUBMIT')}
-          style={{ padding: '10px 18px', borderRadius: '8px', backgroundColor: '#1d4ed8', color: '#fff', fontWeight: 'bold', border: 'none', cursor: (isReadOnly || saving) ? 'not-allowed' : 'pointer', opacity: (isReadOnly || saving) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}
+          style={{ padding: '8px 14px', borderRadius: '8px', backgroundColor: '#1d4ed8', color: '#fff', fontWeight: 'bold', border: 'none', fontSize: '12px', cursor: (isReadOnly || saving) ? 'not-allowed' : 'pointer', opacity: (isReadOnly || saving) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}
         >
-          <Send size={15} /> {saving ? 'Submitting...' : 'Submit Student Result'}
+          <Send size={14} /> {saving ? 'Submitting...' : 'Submit Result'}
         </button>
       </div>
 
