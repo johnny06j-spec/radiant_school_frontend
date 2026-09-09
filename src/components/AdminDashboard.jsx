@@ -17,7 +17,8 @@ import {
   Sun,
   Menu,
   X,
-  Send
+  Send,
+  Building2
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import axiosInstance from '../api/axiosInstance';
@@ -39,6 +40,9 @@ const AdminDashboard = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   
+  // 🏫 Multi-Campus Global Switcher State ('All Campuses', 'Emerald Campus', 'Great Campus')
+  const [selectedCampus, setSelectedCampus] = useState('All Campuses');
+
   // Statistics State Engine
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -61,10 +65,14 @@ const AdminDashboard = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Fetch campus-aware dashboard stats when campus or tab changes
   useEffect(() => {
     const fetchDashboardStats = async () => {
+      setLoading(true);
       try {
-        const response = await axiosInstance.get('/auth/dashboard-stats');
+        const response = await axiosInstance.get('/auth/dashboard-stats', {
+          params: { campus: selectedCampus }
+        });
         if (response.data?.success && response.data?.stats) {
           setStats(response.data.stats);
         }
@@ -76,7 +84,7 @@ const AdminDashboard = () => {
     };
 
     fetchDashboardStats();
-  }, []);
+  }, [selectedCampus]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -112,7 +120,6 @@ const AdminDashboard = () => {
   });
 
   return (
-    /* 🟢 FIX 1: Lock main container height strictly to 100vh and disable outer window scroll */
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column', 
@@ -138,6 +145,26 @@ const AdminDashboard = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* 🏫 Mobile Campus Switcher Dropdown */}
+            <select
+              value={selectedCampus}
+              onChange={(e) => setSelectedCampus(e.target.value)}
+              style={{
+                backgroundColor: '#0b111e',
+                border: '1px solid #3b82f6',
+                borderRadius: '6px',
+                padding: '4px 8px',
+                color: '#fff',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                outline: 'none'
+              }}
+            >
+              <option value="All Campuses">All Campuses</option>
+              <option value="Emerald Campus">Emerald Campus</option>
+              <option value="Great Campus">Great Campus</option>
+            </select>
+
             <button onClick={toggleTheme} style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', borderRadius: '50%', padding: '6px', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
               {isDark ? <Sun size={16} color="#d97706" /> : <Moon size={16} />}
             </button>
@@ -145,7 +172,7 @@ const AdminDashboard = () => {
         </header>
       )}
 
-      {/* 🟢 FIX 2: Flex row with 100% height containment */}
+      {/* flex row with 100% height containment */}
       <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }}>
         
         {/* 🖥️ DESKTOP SIDEBAR PANEL */}
@@ -157,14 +184,42 @@ const AdminDashboard = () => {
             borderRight: '1px solid var(--border-color)', 
             display: 'flex', 
             flexDirection: 'column', 
-            justify: 'space-between', 
+            justifyContent: 'space-between', 
             height: '100%', 
             boxSizing: 'border-box',
             flexShrink: 0,
             overflowY: 'auto'
           }}>
             <div>
-              <h2 style={{ fontSize: '13px', color: '#ec4899', marginBottom: '1.5rem', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', paddingLeft: '0.5rem' }}>RADIANT ADMIN</h2>
+              <h2 style={{ fontSize: '13px', color: '#ec4899', marginBottom: '1.25rem', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', paddingLeft: '0.5rem' }}>RADIANT ADMIN</h2>
+              
+              {/* 🏫 DESKTOP CAMPUS SELECTOR DROPDOWN */}
+              <div style={{ marginBottom: '1.25rem', padding: '0 0.25rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  <Building2 size={12} style={{ color: '#3b82f6' }} /> Active Campus Filter
+                </label>
+                <select 
+                  value={selectedCampus} 
+                  onChange={(e) => setSelectedCampus(e.target.value)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#0b111e',
+                    border: '1px solid #3b82f6',
+                    borderRadius: '8px',
+                    padding: '8px 10px',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="All Campuses">All Campuses</option>
+                  <option value="Emerald Campus">Emerald Campus</option>
+                  <option value="Great Campus">Great Campus</option>
+                </select>
+              </div>
+
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {menuItems.map((item) => {
                   const IconComponent = item.icon;
@@ -179,7 +234,7 @@ const AdminDashboard = () => {
             </div>
 
             <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-              {/* 🌙 / ☀️ THEME TOGGLE SWITCH ROW */}
+              {/* THEME TOGGLE SWITCH ROW */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.25rem', marginBottom: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {isDark ? <Moon size={16} color="var(--text-primary)" /> : <Sun size={16} color="#d97706" />}
@@ -234,27 +289,55 @@ const AdminDashboard = () => {
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              justify: 'space-between',
+              justifyContent: 'space-between',
             }}>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                {menuItems.map((item) => {
-                  const IconComponent = item.icon;
-                  return (
-                    <li 
-                      key={item.id} 
-                      onClick={() => { 
-                        setActiveTab(item.id); 
-                        setEditingStudentId(null); 
-                        setMobileDrawerOpen(false); 
-                      }} 
-                      style={getSidebarItemStyle(item.id)}
-                    >
-                      <IconComponent size={18} strokeWidth={2} />
-                      {item.name}
-                    </li>
-                  );
-                })}
-              </ul>
+              <div>
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    <Building2 size={12} style={{ color: '#3b82f6' }} /> Active Campus Filter
+                  </label>
+                  <select 
+                    value={selectedCampus} 
+                    onChange={(e) => setSelectedCampus(e.target.value)}
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#0b111e',
+                      border: '1px solid #3b82f6',
+                      borderRadius: '8px',
+                      padding: '8px 10px',
+                      color: '#ffffff',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="All Campuses">All Campuses</option>
+                    <option value="Emerald Campus">Emerald Campus</option>
+                    <option value="Great Campus">Great Campus</option>
+                  </select>
+                </div>
+
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {menuItems.map((item) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <li 
+                        key={item.id} 
+                        onClick={() => { 
+                          setActiveTab(item.id); 
+                          setEditingStudentId(null); 
+                          setMobileDrawerOpen(false); 
+                        }} 
+                        style={getSidebarItemStyle(item.id)}
+                      >
+                        <IconComponent size={18} strokeWidth={2} />
+                        {item.name}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
 
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1rem' }}>
                 <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem', background: 'transparent', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
@@ -266,7 +349,7 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {/* 🟢 FIX 3: INDEPENDENT CONTENT SCROLL CANVAS */}
+        {/* INDEPENDENT CONTENT SCROLL CANVAS */}
         <div style={{ 
           flex: 1, 
           height: '100%', 
@@ -280,11 +363,20 @@ const AdminDashboard = () => {
               <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <h1 style={{ fontSize: '26px', fontWeight: '800', margin: '0 0 6px 0', letterSpacing: '-0.5px', color: 'var(--text-primary)' }}>System Overview</h1>
-                  <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '13px', fontWeight: '500' }}>Welcome back to your administration command platform.</p>
+                  <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '13px', fontWeight: '500' }}>
+                    Welcome back to your administration command platform.
+                  </p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)', padding: '0.5rem 1rem', borderRadius: '50px', color: 'var(--accent-success)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-success)' }}></span>
-                  Database Active
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', color: '#60a5fa', padding: '6px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold' }}>
+                    <Building2 size={15} /> Scope: <span>{selectedCampus}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)', padding: '0.5rem 1rem', borderRadius: '50px', color: 'var(--accent-success)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-success)' }}></span>
+                    Database Active
+                  </div>
                 </div>
               </header>
 
@@ -361,12 +453,14 @@ const AdminDashboard = () => {
             <StudentRegistry 
               setActiveTab={setActiveTab} 
               studentId={null} 
+              defaultCampus={selectedCampus !== 'All Campuses' ? selectedCampus : 'Emerald Campus'}
             />
           )}
 
           {activeTab === 'directory' && (
             <StudentDirectory 
               setActiveTab={setActiveTab} 
+              selectedCampus={selectedCampus}
               onEditStudent={(id) => {
                 setEditingStudentId(id);
                 setActiveTab('edit-student');
@@ -382,19 +476,19 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'teachers' && (
-            <StaffRegistry />
+            <StaffRegistry selectedCampus={selectedCampus} />
           )}
 
           {activeTab === 'fees' && (
-            <SetClassFees />
+            <SetClassFees selectedCampus={selectedCampus} />
           )}
 
           {activeTab === 'debtors' && (
-            <DebtorsList />
+            <DebtorsList selectedCampus={selectedCampus} />
           )}
 
           {activeTab === 'payments' && (
-            <PaymentsDesk />
+            <PaymentsDesk selectedCampus={selectedCampus} />
           )}
 
           {activeTab === 'settings' && (
@@ -406,7 +500,7 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'release-results' && (
-            <AdminReleaseDesk />
+            <AdminReleaseDesk selectedCampus={selectedCampus} />
           )}
 
         </div>
