@@ -1,10 +1,10 @@
 // src/views/StudentRegistry.jsx
 import React from "react";
-import { ArrowLeft, UserPlus, Loader2, CheckCircle2, Copy, Check } from "lucide-react";
+import { ArrowLeft, UserPlus, Loader2, CheckCircle2, Copy, Check, Building2 } from "lucide-react";
 import { useStudentForm } from "../hooks/useStudentForm";
 import { PersonalInfoSection, GuardiansSection } from "./FormSections";
 
-const StudentRegistry = ({ setActiveTab, studentId }) => {
+const StudentRegistry = ({ setActiveTab, studentId, defaultCampus = 'Emerald Campus' }) => {
   const {
     isEditMode,
     isLoadingProfile,
@@ -22,7 +22,7 @@ const StudentRegistry = ({ setActiveTab, studentId }) => {
     setSelectedFile,
     setImagePreview,
     handleSubmit
-  } = useStudentForm(setActiveTab, studentId);
+  } = useStudentForm(setActiveTab, studentId, defaultCampus);
 
   const styles = {
     container: { 
@@ -144,6 +144,34 @@ const StudentRegistry = ({ setActiveTab, studentId }) => {
         )}
 
         <form onSubmit={handleSubmit}>
+          
+          {/* 🏫 CAMPUS SELECTION BAR */}
+          <div style={{ ...styles.formCard, padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6', fontWeight: 'bold', fontSize: '12px', marginBottom: '8px' }}>
+              <Building2 size={16} /> SCHOOL CAMPUS ALLOCATION
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+              <div>
+                <label style={styles.inputLabel}>TARGET CAMPUS *</label>
+                <select
+                  name="campus"
+                  value={formData.campus || defaultCampus}
+                  onChange={handleChange}
+                  style={{
+                    ...styles.textInput,
+                    backgroundColor: '#0b111e',
+                    border: '1px solid #3b82f6',
+                    fontWeight: 'bold',
+                    color: '#ffffff'
+                  }}
+                >
+                  <option value="Emerald Campus">Emerald Campus</option>
+                  <option value="Great Campus">Great Campus</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <PersonalInfoSection 
             formData={{
               ...formData,

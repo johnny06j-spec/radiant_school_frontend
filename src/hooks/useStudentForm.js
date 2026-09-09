@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../api/axiosInstance";
 
-export const useStudentForm = (setActiveTab, explicitStudentId) => {
+export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 'Emerald Campus') => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -24,6 +24,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
     surname: "", 
     firstName: "", 
     otherName: "", 
+    campus: defaultCampus || "Emerald Campus",
     assignedClass: "KG 1",
     intakeSession: "2026/2027",
     admittedSession: "2026/2027",
@@ -77,6 +78,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
               surname: data.surname || "",
               firstName: data.firstName || "",
               otherName: data.otherName || "",
+              campus: data.campus || defaultCampus || "Emerald Campus",
               assignedClass: mappedClass,
               intakeSession: sessionVal,
               admittedSession: sessionVal,
@@ -111,7 +113,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
       };
       fetchStudentProfileData();
     }
-  }, [studentId, isEditMode]);
+  }, [studentId, isEditMode, defaultCampus]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -161,6 +163,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId) => {
       dataContainer.append("intakeTerm", termVal);
       dataContainer.append("admittedTerm", termVal);
       dataContainer.append("admissionTerm", termVal);
+      dataContainer.append("campus", formData.campus || defaultCampus);
 
       Object.keys(formData).forEach((key) => {
         if (!["assignedClass", "intakeSession", "admittedSession", "intakeTerm", "admittedTerm"].includes(key)) {
