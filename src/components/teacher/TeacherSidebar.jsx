@@ -9,13 +9,17 @@ import {
   X, 
   Award,
   GraduationCap,
-  ShieldCheck
+  ShieldCheck,
+  Building2
 } from 'lucide-react';
 
 const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, profile, onLogout }) => {
   // Check if profile is an Executive Role
   const isExecutive = profile?.role === 'headmaster' || profile?.role === 'principal' || profile?.department === 'Executive Administration';
   const roleTitle = profile?.role === 'headmaster' ? 'Headmaster' : (profile?.role === 'principal' ? 'Principal' : 'Teacher');
+
+  // Multi-campus context
+  const activeCampus = profile?.campus || 'Emerald Campus';
 
   // Teacher Class Teacher checks
   const isPrimary = profile?.schoolSection === 'PRIMARY';
@@ -68,7 +72,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
         borderRight: '1px solid #1e293b',
         display: 'flex',
         flexDirection: 'column',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         transition: 'transform 0.3s ease-in-out',
         transform: mobileOpen || (window.innerWidth >= 1024) ? 'translateX(0)' : 'translateX(-100%)'
       }}>
@@ -95,9 +99,15 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
             </button>
           </div>
 
+          {/* 🏫 CAMPUS BADGE */}
+          <div style={{ margin: '12px 16px 0 16px', padding: '8px 12px', borderRadius: '8px', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.25)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Building2 size={15} color="#60a5fa" />
+            <span style={{ fontSize: '11px', fontWeight: '700', color: '#60a5fa' }}>{activeCampus}</span>
+          </div>
+
           {/* EXECUTIVE BADGE */}
           {isExecutive ? (
-            <div style={{ margin: '16px 16px 8px 16px', padding: '12px', borderRadius: '10px', backgroundColor: 'rgba(6, 78, 59, 0.4)', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ margin: '12px 16px 8px 16px', padding: '12px', borderRadius: '10px', backgroundColor: 'rgba(6, 78, 59, 0.4)', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'rgba(4, 120, 87, 0.6)', color: '#6ee7b7' }}>
                 <ShieldCheck size={18} />
               </div>
@@ -108,7 +118,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
             </div>
           ) : isCT && (
             /* CLASS TEACHER BADGE */
-            <div style={{ margin: '16px 16px 8px 16px', padding: '12px', borderRadius: '10px', backgroundColor: 'rgba(58, 7, 100, 0.4)', border: '1px solid rgba(168, 85, 247, 0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ margin: '12px 16px 8px 16px', padding: '12px', borderRadius: '10px', backgroundColor: 'rgba(58, 7, 100, 0.4)', border: '1px solid rgba(168, 85, 247, 0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'rgba(88, 28, 135, 0.6)', color: '#d8b4fe' }}>
                 <Award size={18} />
               </div>
@@ -136,7 +146,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
                     borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
-                    justify: 'space-between',
+                    justifyContent: 'space-between',
                     gap: '12px',
                     fontSize: '13px',
                     fontWeight: 'bold',
@@ -190,7 +200,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center',
+              justifyContent: 'center',
               gap: '8px'
             }}
           >
