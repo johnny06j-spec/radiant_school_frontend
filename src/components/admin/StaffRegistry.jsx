@@ -1,9 +1,9 @@
 // src/components/admin/StaffRegistry.jsx
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Search, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, Plus, X, Award, Edit3, RotateCcw, Crown, Shield } from 'lucide-react';
+import { UserPlus, Search, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, Plus, X, Award, Edit3, RotateCcw, Crown, Shield, Building2 } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
 
-const StaffRegistry = () => {
+const StaffRegistry = ({ selectedCampus = 'All Campuses' }) => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -110,6 +110,7 @@ const StaffRegistry = () => {
     firstName: '',
     email: '',
     phone: '',
+    campus: selectedCampus !== 'All Campuses' ? selectedCampus : 'Emerald Campus',
     role: 'teacher', // Options: 'teacher', 'headmaster', 'principal'
     schoolSection: 'PRIMARY', 
     assignedClass: 'KG 1', 
@@ -127,11 +128,13 @@ const StaffRegistry = () => {
   // Check if current form is configuring an Executive (Headmaster / Principal / Admin dept)
   const isExecutiveRole = formData.role === 'headmaster' || formData.role === 'principal' || formData.department === 'Executive Administration';
 
-  // 🟢 FETCH ALL TEACHERS FROM DEDICATED ROUTE (/teachers)
+  // 🟢 FETCH ALL TEACHERS FROM DEDICATED ROUTE WITH CAMPUS FILTER
   const fetchTeachers = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get('/teachers');
+      const response = await axiosInstance.get('/teachers', {
+        params: { campus: selectedCampus }
+      });
       const teacherData = response.data.staff || response.data || [];
       setTeachers(Array.isArray(teacherData) ? teacherData : []);
     } catch (err) {
@@ -144,7 +147,17 @@ const StaffRegistry = () => {
 
   useEffect(() => {
     fetchTeachers();
-  }, []);
+  }, [selectedCampus]);
+
+  // Keep default campus form state in sync when global toolbar campus filter switches
+  useEffect(() => {
+    if (!editingTeacherId) {
+      setFormData(prev => ({
+        ...prev,
+        campus: selectedCampus !== 'All Campuses' ? selectedCampus : 'Emerald Campus'
+      }));
+    }
+  }, [selectedCampus, editingTeacherId]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -242,6 +255,7 @@ const StaffRegistry = () => {
       firstName: first,
       email: teacher.email || '',
       phone: teacher.phone || '',
+      campus: teacher.campus || 'Emerald Campus',
       role: teacher.role || 'teacher',
       schoolSection: section,
       assignedClass: teacher.assignedClass || 'KG 1',
@@ -264,7 +278,10 @@ const StaffRegistry = () => {
 
   const handleCancelEdit = () => {
     setEditingTeacherId(null);
-    setFormData(initialFormState);
+    setFormData({
+      ...initialFormState,
+      campus: selectedCampus !== 'All Campuses' ? selectedCampus : 'Emerald Campus'
+    });
     setSubjectAllocations([{ className: 'KG 1', subjectName: 'CLASS TEACHER' }]);
     setError('');
     setSuccess('');
@@ -306,6 +323,7 @@ const StaffRegistry = () => {
             name: `${formData.surname} ${formData.firstName}`,
             username: response.data.credentials.username,
             password: response.data.credentials.temporaryPassword,
+            campus: formData.campus,
             role: formData.role.toUpperCase(),
             schoolSection: formData.schoolSection,
             isExecutive: isExecutiveRole,
@@ -316,7 +334,10 @@ const StaffRegistry = () => {
               : (isPrimary ? formData.assignedClass : `${subjectAllocations.length} Subject Slots Linked`)
           });
 
-          setFormData(initialFormState);
+          setFormData({
+            ...initialFormState,
+            campus: selectedCampus !== 'All Campuses' ? selectedCampus : 'Emerald Campus'
+          });
           setSubjectAllocations([{ className: 'JSS 1', subjectName: 'English Language' }]);
           fetchTeachers();
         }
@@ -341,14 +362,23 @@ const StaffRegistry = () => {
   };
 
   const filteredTeachers = teachers.filter(t => {
-    const matchStr = `${t.surname || ''} ${t.firstName || ''} ${t.name || ''} ${t.username || ''} ${t.role || ''} ${t.schoolSection || ''} ${t.classTeacherOf || ''}`.toLowerCase();
+    const matchStr = `${t.surname || ''} ${t.firstName || ''} ${t.name || ''} ${t.username || ''} ${t.role || ''} ${t.schoolSection || ''} ${t.campus || ''} ${t.classTeacherOf || ''}`.toLowerCase();
     return matchStr.includes(searchTerm.toLowerCase());
   });
 
   return (
     <div style={{ padding: '1rem 0', fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: 'var(--bg-main)', color: 'var(--text-primary)', minHeight: '100vh' }}>
-      <h2 style={{ margin: '0 0 6px 0', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.5px' }}>Staff & Faculty Registry</h2>
-      <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', fontSize: '13px' }}>Enroll instructors, Headmasters, and Principals, manage credentials, and assign class governance permissions.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '24px' }}>
+        <div>
+          <h2 style={{ margin: '0 0 6px 0', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.5px' }}>Staff & Faculty Registry</h2>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '13px' }}>Enroll instructors, Headmasters, and Principals, manage credentials, and assign class governance permissions.</p>
+        </div>
+
+        {/* 🏫 Scope Active Campus Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', color: '#60a5fa', padding: '6px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold' }}>
+          <Building2 size={15} /> Campus Scope: <span>{selectedCampus}</span>
+        </div>
+      </div>
 
       {success && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '6px', marginBottom: '20px', fontSize: '13px', fontWeight: '600' }}>
@@ -368,7 +398,7 @@ const StaffRegistry = () => {
             <ShieldCheck size={18} /> AUTOMATIC PORTAL LOGIN PROVISIONED
           </div>
           <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-            Send these details to <strong style={{ color: 'var(--text-primary)' }}>{generatedCreds.name}</strong>. Role configured as <strong style={{ color: 'var(--accent-primary)' }}>{generatedCreds.role}</strong> ({generatedCreds.schoolSection}).
+            Send these details to <strong style={{ color: 'var(--text-primary)' }}>{generatedCreds.name}</strong>. Role configured as <strong style={{ color: 'var(--accent-primary)' }}>{generatedCreds.role}</strong> ({generatedCreds.schoolSection} - {generatedCreds.campus}).
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', backgroundColor: 'var(--bg-input)', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
             <div>
@@ -380,8 +410,8 @@ const StaffRegistry = () => {
               <span style={{ fontSize: '13px', color: 'var(--accent-success)', fontFamily: 'monospace', fontWeight: 'bold' }}>{generatedCreds.password}</span>
             </div>
             <div>
-              <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>ALLOCATION TRACK</span>
-              <span style={{ fontSize: '13px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>{generatedCreds.allocationDisplay}</span>
+              <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>ASSIGNED CAMPUS</span>
+              <span style={{ fontSize: '13px', color: '#60a5fa', fontWeight: 'bold' }}>{generatedCreds.campus}</span>
             </div>
             <div>
               <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>ROLE LEVEL</span>
@@ -412,6 +442,22 @@ const StaffRegistry = () => {
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             
+            {/* 🏫 CAMPUS ASSIGNMENT FIELD */}
+            <div>
+              <label style={{ fontSize: '10px', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Building2 size={12} /> CAMPUS ALLOCATION *
+              </label>
+              <select 
+                name="campus" 
+                value={formData.campus} 
+                onChange={handleInputChange} 
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #3b82f6', backgroundColor: '#0b111e', color: '#ffffff', marginTop: '4px', fontSize: '13px', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }}
+              >
+                <option value="Emerald Campus">Emerald Campus</option>
+                <option value="Great Campus">Great Campus</option>
+              </select>
+            </div>
+
             {/* GOVERNANCE ROLE SELECTOR */}
             <div>
               <label style={{ fontSize: '10px', color: 'var(--accent-primary)', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -480,7 +526,7 @@ const StaffRegistry = () => {
                   <Shield size={16} /> EXECUTIVE OVERALL GOVERNANCE UNLOCKED
                 </span>
                 <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                  This user has section-wide executive sign-off authority. They oversee all classroom results, write official remarks, and manage Third-Term promotions across all students in <strong style={{ color: 'var(--text-primary)' }}>{formData.schoolSection}</strong>.
+                  This user has section-wide executive sign-off authority. They oversee all classroom results, write official remarks, and manage Third-Term promotions across all students in <strong style={{ color: 'var(--text-primary)' }}>{formData.schoolSection}</strong> on <strong style={{ color: '#60a5fa' }}>{formData.campus}</strong>.
                 </p>
               </div>
             ) : (
@@ -579,7 +625,7 @@ const StaffRegistry = () => {
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
             <input 
               type="text" 
-              placeholder="Search roster by name, username, role, section..." 
+              placeholder="Search roster by name, username, campus, role..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ width: '100%', padding: '10px 10px 10px 36px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
@@ -592,6 +638,7 @@ const StaffRegistry = () => {
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                   <th style={{ padding: '10px' }}>Username</th>
                   <th style={{ padding: '10px' }}>Name & Role</th>
+                  <th style={{ padding: '10px' }}>Campus</th>
                   <th style={{ padding: '10px' }}>Section</th>
                   <th style={{ padding: '10px' }}>Assigned Allocation</th>
                   <th style={{ padding: '10px' }}>Class Teacher</th>
@@ -614,6 +661,11 @@ const StaffRegistry = () => {
                         <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{t.name || `${t.surname} ${t.firstName}`}</div>
                         <span style={{ fontSize: '10px', color: isExec ? 'var(--accent-success)' : 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>
                           {roleTitle}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        <span style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
+                          {t.campus || 'Emerald Campus'}
                         </span>
                       </td>
                       <td style={{ padding: '12px 10px' }}>
@@ -670,7 +722,7 @@ const StaffRegistry = () => {
                 })}
                 {filteredTeachers.length === 0 && (
                   <tr>
-                    <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No staff members found on roster.</td>
+                    <td colSpan="7" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No staff members found on roster.</td>
                   </tr>
                 )}
               </tbody>
