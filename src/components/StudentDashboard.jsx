@@ -5,7 +5,7 @@ import {
   User, BookOpen, CreditCard, FileText, 
   RefreshCw, ShieldAlert, LayoutDashboard, Settings, 
   Calendar, CheckCircle2, GraduationCap, ArrowUpRight,
-  Menu
+  Menu, Building2
 } from 'lucide-react';
 import API from '../api/axiosInstance';
 import InstitutionLogo from "../assets/Logo.jpg";
@@ -72,9 +72,10 @@ const StudentDashboard = () => {
           setLinkedSiblings(student.linkedSiblings);
         }
 
-        // 🟢 3. Fetch financial ledger using active system term & session
+        // 🟢 3. Fetch financial ledger using active system term, session, and campus context
+        const studentCampus = student.campus || 'Emerald Campus';
         const ledgerRes = await API.get(
-          `/finance/student-ledger/${student._id}?term=${encodeURIComponent(systemTerm)}&session=${encodeURIComponent(systemSession)}`
+          `/finance/student-ledger/${student._id}?term=${encodeURIComponent(systemTerm)}&session=${encodeURIComponent(systemSession)}&campus=${encodeURIComponent(studentCampus)}`
         );
         if (ledgerRes.data?.success) {
           setLedgerData(ledgerRes.data.data);
@@ -165,6 +166,7 @@ const StudentDashboard = () => {
     id: studentData?._id || activeStudentId || null, 
     firstName: studentData?.firstName || "Student",
     lastName: studentData?.lastName || "",
+    campus: studentData?.campus || "Emerald Campus",
     admissionNo: studentData?.admissionNo || "N/A",
     currentClass: studentData?.currentClass || studentData?.assignedClass || "N/A",
     academicSession: activeConfig.session,
@@ -253,9 +255,14 @@ const StudentDashboard = () => {
               <h2 style={styles.brandTitle}>STUDENT PORTAL</h2>
             </div>
           </div>
-          <div style={styles.activeSessionBadge}>
-            <div style={styles.pulseDot} />
-            <span>{profile.academicSession}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#60a5fa', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
+              {profile.campus}
+            </span>
+            <div style={styles.activeSessionBadge}>
+              <div style={styles.pulseDot} />
+              <span>{profile.academicSession}</span>
+            </div>
           </div>
         </header>
       )}
@@ -272,11 +279,19 @@ const StudentDashboard = () => {
             
             <div style={styles.welcomeRow}>
               <div>
-                <h1 style={{ ...styles.welcomeText, fontSize: isMobile ? '18px' : '24px' }}>
-                  Welcome back, <span style={{ color: 'var(--accent-primary)' }}>{profile.firstName}!</span>
-                </h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                  <h1 style={{ ...styles.welcomeText, fontSize: isMobile ? '18px' : '24px' }}>
+                    Welcome back, <span style={{ color: 'var(--accent-primary)' }}>{profile.firstName}!</span>
+                  </h1>
+                </div>
                 <p style={styles.welcomeSubtitle}>Here's your academic and financial overview for {profile.academicSession} ({profile.academicTerm}).</p>
               </div>
+
+              {!isMobile && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', color: '#60a5fa', padding: '6px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold' }}>
+                  <Building2 size={15} /> <span>{profile.campus}</span>
+                </div>
+              )}
             </div>
 
             {/* PROFILE CARD */}
@@ -306,8 +321,8 @@ const StudentDashboard = () => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px' }}>
                     <div style={{ background: 'var(--bg-input)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                      <span style={styles.inlineCardLabel}>Current Session</span>
-                      <p style={styles.inlineCardValue}>{profile.academicSession}</p>
+                      <span style={styles.inlineCardLabel}>Assigned Campus</span>
+                      <p style={{ ...styles.inlineCardValue, color: '#60a5fa' }}>{profile.campus}</p>
                     </div>
                     <div style={{ background: 'var(--bg-input)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                       <span style={styles.inlineCardLabel}>Current Term</span>
@@ -351,10 +366,10 @@ const StudentDashboard = () => {
                         </div>
                       </div>
                       <div style={styles.metaItemLineRow}>
-                        <Calendar size={14} color="var(--text-muted)" style={{ marginTop: '2px' }} />
+                        <Building2 size={14} color="#3b82f6" style={{ marginTop: '2px' }} />
                         <div>
-                          <span style={styles.inlineCardLabel}>Date of Birth</span>
-                          <p style={styles.inlineCardValue}>{profile.dob}</p>
+                          <span style={styles.inlineCardLabel}>Campus Location</span>
+                          <p style={{ ...styles.inlineCardValue, color: '#60a5fa', fontWeight: 'bold' }}>{profile.campus}</p>
                         </div>
                       </div>
                       <div style={styles.metaItemLineRow}>
