@@ -4,6 +4,7 @@ import { Edit2, Trash2 } from "lucide-react";
 
 const StudentTableRow = ({ student, isSelected, onSelect, onEdit, onDelete, styles }) => {
   const fallbackName = (student.name || `${student.firstName || ""} ${student.surname || ""}`).trim() || "Unknown Student";
+  const campusName = student.campus || "Emerald Campus";
 
   return (
     <tr 
@@ -19,6 +20,19 @@ const StudentTableRow = ({ student, isSelected, onSelect, onEdit, onDelete, styl
       </td>
       <td style={{ ...styles.td, fontWeight: "700", color: isSelected ? "#c084fc" : "#fff" }}>
         {fallbackName}
+      </td>
+      <td style={{ ...styles.td }}>
+        <span style={{
+          backgroundColor: campusName === 'Great Campus' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+          color: campusName === 'Great Campus' ? '#c084fc' : '#60a5fa',
+          padding: '2px 6px',
+          borderRadius: '4px',
+          fontSize: '11px',
+          fontWeight: '700',
+          border: campusName === 'Great Campus' ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)'
+        }}>
+          {campusName}
+        </span>
       </td>
       <td style={{ ...styles.td, color: "#94a3b8" }}>
         {student.assignedClass || student.currentClass || "N/A"}

@@ -1,6 +1,6 @@
 // src/components/StudentProfilePanel.jsx
 import React from "react";
-import { User, Download, Printer } from "lucide-react";
+import { User, Download, Printer, Building2 } from "lucide-react";
 import InstitutionLogo from "../assets/Logo.jpg";
 
 const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodataSheet, styles }) => {
@@ -20,6 +20,7 @@ const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodata
   // Intake Timeline Context Resolution
   const intakeSession = selectedStudent.intakeSession || selectedStudent.admittedSession || selectedStudent.admissionSession || "N/A";
   const intakeTerm = selectedStudent.intakeTerm || selectedStudent.admittedTerm || selectedStudent.admissionTerm || "First Term";
+  const campusName = selectedStudent.campus || "Emerald Campus";
 
   return (
     <div style={styles.rightWrapperCard}>
@@ -130,6 +131,10 @@ const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodata
         <div style={styles.sectionHeader}>B. Academic Information</div>
         <div style={styles.dataGrid}>
           <div style={{ display: "contents" }}>
+            <span style={styles.dataLabel}>Campus Assignment:</span>
+            <span style={{ ...styles.dataValue, color: "#9333ea", fontWeight: "bold" }}>{campusName}</span>
+          </div>
+          <div style={{ display: "contents" }}>
             <span style={styles.dataLabel}>Current Class:</span>
             <span style={{ ...styles.dataValue, color: "#10b981" }}>{selectedStudent.assignedClass || selectedStudent.currentClass || "N/A"}</span>
           </div>
@@ -141,7 +146,6 @@ const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodata
             <span style={styles.dataLabel}>Intake Session:</span>
             <span style={styles.dataValue}>{intakeSession}</span>
           </div>
-          {/* 🟢 NEW INTAKE TERM FIELD DISPLAY */}
           <div style={{ display: "contents" }}>
             <span style={styles.dataLabel}>Intake Term:</span>
             <span style={{ ...styles.dataValue, color: "#2563eb" }}>{intakeTerm}</span>

@@ -10,7 +10,8 @@ const StudentTable = ({ students, selectedStudent, onSelectStudent, onEditRedire
           <tr>
             <th style={styles.th}>Reg Number</th>
             <th style={styles.th}>Full Name</th>
-            <th style={styles.th}>Enrolled Course</th>
+            <th style={styles.th}>Campus</th>
+            <th style={styles.th}>Enrolled Class</th>
             <th style={styles.th}>Status</th>
             <th style={{ ...styles.th, textAlign: "right", paddingRight: "1.25rem" }}>Actions</th>
           </tr>
@@ -18,7 +19,7 @@ const StudentTable = ({ students, selectedStudent, onSelectStudent, onEditRedire
         <tbody>
           {students.length === 0 ? (
             <tr>
-              <td colSpan="5" style={{ ...styles.td, textAlign: "center", color: "#64748b", padding: "3rem 1rem" }}>
+              <td colSpan="6" style={{ ...styles.td, textAlign: "center", color: "#64748b", padding: "3rem 1rem" }}>
                 No matching student profiles located.
               </td>
             </tr>
