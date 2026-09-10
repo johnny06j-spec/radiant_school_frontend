@@ -5,9 +5,10 @@ import { Search, Download, RotateCcw } from "lucide-react";
 import jsPDF from "jspdf";
 import { autoTable } from "jspdf-autotable";
 
-const DebtorsList = () => {
+const DebtorsList = ({ defaultCampus = 'All Campuses' }) => {
   const { isLoading, debtors, summaryMetrics, fetchDebtorsList, fetchSummaryMetrics, downloadDebtorsPdf } = useFinanceAdmin();
   const [classFilter, setClassFilter] = useState("All");
+  const [campusFilter, setCampusFilter] = useState(defaultCampus);
   const [searchTerm, setSearchTerm] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   
@@ -19,18 +20,26 @@ const DebtorsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Sync prop changes if active campus filter updates externally
+  useEffect(() => {
+    if (defaultCampus) {
+      setCampusFilter(defaultCampus);
+    }
+  }, [defaultCampus]);
+
   // Sync with available hook fetch methods on component mount & filter updates
   useEffect(() => {
     const filters = {
       session: sessionFilter,
       term: termFilter,
+      ...(campusFilter !== "All Campuses" && { campus: campusFilter }),
       ...(classFilter !== "All" && { assignedClass: classFilter })
     };
     
     fetchDebtorsList(filters);
     fetchSummaryMetrics(filters); // Keep matching stats cards synchronized
     setCurrentPage(1); // Reset page balance on filter structural shifts
-  }, [classFilter, sessionFilter, termFilter, fetchDebtorsList, fetchSummaryMetrics]);
+  }, [classFilter, campusFilter, sessionFilter, termFilter, fetchDebtorsList, fetchSummaryMetrics]);
 
   const styles = {
     container: { padding: "1rem 0", backgroundColor: "var(--bg-main)", color: "var(--text-primary)", minHeight: "100vh", fontFamily: "system-ui, -apple-system, sans-serif" },
@@ -51,12 +60,14 @@ const DebtorsList = () => {
     activePageBtn: { background: "var(--accent-primary)", border: "1px solid var(--accent-primary)", color: "#ffffff", padding: "0.4rem 0.75rem", borderRadius: "4px", margin: "0 0.2rem", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }
   };
 
+  const campuses = ["All Campuses", "Emerald Campus", "Great Campus"];
   const classes = ["All", "KG 1", "KG 2", "KG 3", "JSS 1", "JSS 2", "JSS 3", "SSS 1", "SSS 2", "SSS 3"];
   const sessions = ["2025/2026", "2026/2027", "2027/2028", "2028/2029"];
   const terms = ["First Term", "Second Term", "Third Term"];
 
   const handleResetControls = () => {
     setSearchTerm("");
+    setCampusFilter("All Campuses");
     setClassFilter("All");
     setSessionFilter("2026/2027");
     setTermFilter("First Term");
@@ -88,14 +99,20 @@ const DebtorsList = () => {
     }
 
     if (filteredDebtors.length === 0) {
-      alert(`No debtor records found for ${sessionFilter} - ${termFilter} (${classFilter === "All" ? "All Classes" : classFilter}). PDF generation canceled.`);
+      alert(`No debtor records found for ${sessionFilter} - ${termFilter} (${campusFilter}). PDF generation canceled.`);
       return;
     }
 
     try {
       setIsExporting(true);
       
-      const data = await downloadDebtorsPdf({ session: sessionFilter, term: termFilter, assignedClass: classFilter });
+      const data = await downloadDebtorsPdf({ 
+        session: sessionFilter, 
+        term: termFilter, 
+        campus: campusFilter,
+        assignedClass: classFilter 
+      });
+
       if (!data || !data.success || !data.reportData || data.reportData.length === 0) {
         alert("Failed to gather printable structural matrix parameters or no records matched filters on the database.");
         return;
@@ -109,13 +126,13 @@ const DebtorsList = () => {
       
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.text("RADIANT SCHOOLS ACADEMIC LEDGER", 14, 18);
+      doc.setFontSize(20);
+      doc.text("RADIANT SCHOOLS ACADEMIC LEDGER", 14, 16);
       
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`Financial Session Arrears Overview: ${data.academicSession || sessionFilter} | ${data.academicTerm || termFilter}`, 14, 26);
-      doc.text(`Compiled Date Matrix Statement: ${data.generatedAtDate || new Date().toLocaleDateString()}`, 14, 32);
+      doc.text(`Campus Scope: ${data.campus || campusFilter} | Session: ${data.academicSession || sessionFilter} | Term: ${data.academicTerm || termFilter}`, 14, 24);
+      doc.text(`Compiled Date Matrix Statement: ${data.generatedAtDate || new Date().toLocaleDateString()}`, 14, 30);
 
       let currentYPosition = 50;
 
@@ -130,7 +147,7 @@ const DebtorsList = () => {
         }
 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(13);
+        doc.setFontSize(12);
         doc.setTextColor(51, 65, 85);
         doc.text(`Class Group: ${stream.className}`, 14, currentYPosition);
         currentYPosition += 4;
@@ -139,6 +156,7 @@ const DebtorsList = () => {
           idx + 1,
           student.studentName,
           student.admissionNo,
+          student.campus || 'Emerald Campus',
           `N ${student.previousOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
           `N ${student.currentOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
           `N ${student.totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -146,13 +164,13 @@ const DebtorsList = () => {
 
         autoTable(doc, {
           startY: currentYPosition,
-          head: [["S/N", "Student Name", "Admission No", "Previous Balance", "Current Term Fee", "Total Arrears"]],
+          head: [["S/N", "Student Name", "Admission No", "Campus", "Previous Balance", "Current Term Fee", "Total Arrears"]],
           body: tableRows,
           theme: "striped",
           headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: "bold" },
-          styles: { fontSize: 9, cellPadding: 3 },
+          styles: { fontSize: 8, cellPadding: 2.5 },
           foot: [[
-            "", "Subtotals Summary", "", 
+            "", "Subtotals Summary", "", "",
             `N ${stream.subtotalPrevious.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 
             `N ${stream.subtotalCurrent.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 
             `N ${stream.subtotalTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -180,7 +198,7 @@ const DebtorsList = () => {
       doc.text("TOTAL CURRENT TERM UNPAID RECEIVABLES:", 20, currentYPosition + 17);
       doc.text(`N ${data.grandTotals.grandTotalCurrent.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 140, currentYPosition + 17);
 
-      doc.save(`Radiant_Debtors_Summary_Report_${sessionFilter.replace('/', '_')}.pdf`);
+      doc.save(`Radiant_Debtors_Report_${campusFilter.replace(/\s+/g, '_')}_${sessionFilter.replace('/', '_')}.pdf`);
     } catch (pdfGenerationError) {
       console.error("💥 Local PDF rendering engine context failure:", pdfGenerationError);
       alert("Failed to generate PDF document layout parameters.");
@@ -244,6 +262,11 @@ const DebtorsList = () => {
           <Search size={14} style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
         </div>
 
+        {/* Campus Filter Dropdown */}
+        <select value={campusFilter} onChange={(e) => setCampusFilter(e.target.value)} style={{ ...styles.input, borderColor: '#3b82f6', fontWeight: 'bold' }}>
+          {campuses.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+
         {/* Academic Session filter drop menu */}
         <select value={sessionFilter} onChange={(e) => setSessionFilter(e.target.value)} style={styles.input}>
           {sessions.map(s => <option key={s} value={s}>{s}</option>)}
@@ -275,6 +298,7 @@ const DebtorsList = () => {
                   <th style={styles.th}>S/N</th>
                   <th style={styles.th}>Student Name</th>
                   <th style={styles.th}>Admission No.</th>
+                  <th style={styles.th}>Campus</th>
                   <th style={styles.th}>Class</th>
                   <th style={styles.th}>Previous Outstanding (₦)</th>
                   <th style={styles.th}>Current Outstanding (₦)</th>
@@ -284,22 +308,38 @@ const DebtorsList = () => {
               <tbody>
                 {currentItems.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ ...styles.td, textAlign: "center", color: "var(--text-muted)", padding: "3rem" }}>
+                    <td colSpan="8" style={{ ...styles.td, textAlign: "center", color: "var(--text-muted)", padding: "3rem" }}>
                       🎉 No matching records contain outstanding fee debt rows for the chosen filters.
                     </td>
                   </tr>
                 ) : (
-                  currentItems.map((debtor, index) => (
-                    <tr key={debtor._id || index}>
-                      <td style={styles.td}>{indexOfFirstItem + index + 1}</td>
-                      <td style={{ ...styles.td, fontWeight: "600" }}>{debtor.studentName}</td>
-                      <td style={{ ...styles.td, color: "var(--accent-primary)", fontWeight: "600" }}>{debtor.admissionNo}</td>
-                      <td style={styles.td}>{debtor.class || debtor.currentClass}</td>
-                      <td style={styles.td}>{(debtor.previousOutstanding || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td style={styles.td}>{(debtor.currentOutstanding || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td style={{ ...styles.td, color: "var(--accent-danger)", fontWeight: "700" }}>{(debtor.totalOutstanding || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                    </tr>
-                  ))
+                  currentItems.map((debtor, index) => {
+                    const campusName = debtor.campus || 'Emerald Campus';
+                    return (
+                      <tr key={debtor._id || index}>
+                        <td style={styles.td}>{indexOfFirstItem + index + 1}</td>
+                        <td style={{ ...styles.td, fontWeight: "600" }}>{debtor.studentName}</td>
+                        <td style={{ ...styles.td, color: "var(--accent-primary)", fontWeight: "600" }}>{debtor.admissionNo}</td>
+                        <td style={styles.td}>
+                          <span style={{
+                            backgroundColor: campusName === 'Great Campus' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                            color: campusName === 'Great Campus' ? '#c084fc' : '#60a5fa',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            border: campusName === 'Great Campus' ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)'
+                          }}>
+                            {campusName}
+                          </span>
+                        </td>
+                        <td style={styles.td}>{debtor.class || debtor.currentClass}</td>
+                        <td style={styles.td}>{(debtor.previousOutstanding || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                        <td style={styles.td}>{(debtor.currentOutstanding || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                        <td style={{ ...styles.td, color: "var(--accent-danger)", fontWeight: "700" }}>{(debtor.totalOutstanding || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
