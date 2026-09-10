@@ -3,9 +3,12 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../api/axiosInstance";
 
-export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 'Emerald Campus') => {
+export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 'Great Campus') => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Resolve valid fallback campus if defaultCampus is 'All Campuses' or empty
+  const resolvedCampus = (!defaultCampus || defaultCampus === 'All Campuses') ? 'Great Campus' : defaultCampus;
 
   // Prioritize direct prop state over router location state to avoid auth context drops
   const studentId = explicitStudentId || location.state?.studentId || null;
@@ -24,7 +27,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
     surname: "", 
     firstName: "", 
     otherName: "", 
-    campus: defaultCampus || "Emerald Campus",
+    campus: resolvedCampus,
     assignedClass: "KG 1",
     intakeSession: "2026/2027",
     admittedSession: "2026/2027",
@@ -48,6 +51,16 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
     motherPhone: "", 
     guardianAddress: ""
   });
+
+  // Keep campus state in sync if defaultCampus prop updates dynamically
+  useEffect(() => {
+    if (!isEditMode && resolvedCampus) {
+      setFormData((prev) => ({
+        ...prev,
+        campus: prev.campus || resolvedCampus
+      }));
+    }
+  }, [resolvedCampus, isEditMode]);
 
   // Safely handle going back without changing location.state mid-flight
   const handleBackToDirectory = () => {
@@ -78,7 +91,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
               surname: data.surname || "",
               firstName: data.firstName || "",
               otherName: data.otherName || "",
-              campus: data.campus || defaultCampus || "Emerald Campus",
+              campus: data.campus || resolvedCampus,
               assignedClass: mappedClass,
               intakeSession: sessionVal,
               admittedSession: sessionVal,
@@ -113,7 +126,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
       };
       fetchStudentProfileData();
     }
-  }, [studentId, isEditMode, defaultCampus]);
+  }, [studentId, isEditMode, resolvedCampus]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -155,6 +168,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
       
       const sessionVal = formData.intakeSession || formData.admittedSession || "2026/2027";
       const termVal = formData.intakeTerm || formData.admittedTerm || "First Term";
+      const targetCampus = formData.campus || resolvedCampus;
 
       dataContainer.append("currentClass", formData.assignedClass);
       dataContainer.append("intakeSession", sessionVal);
@@ -163,10 +177,20 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
       dataContainer.append("intakeTerm", termVal);
       dataContainer.append("admittedTerm", termVal);
       dataContainer.append("admissionTerm", termVal);
-      dataContainer.append("campus", formData.campus || defaultCampus);
+      dataContainer.append("campus", targetCampus);
+
+      // Exclude campus & custom keys here to prevent duplicate form fields
+      const excludedKeys = [
+        "campus",
+        "assignedClass", 
+        "intakeSession", 
+        "admittedSession", 
+        "intakeTerm", 
+        "admittedTerm"
+      ];
 
       Object.keys(formData).forEach((key) => {
-        if (!["assignedClass", "intakeSession", "admittedSession", "intakeTerm", "admittedTerm"].includes(key)) {
+        if (!excludedKeys.includes(key)) {
           dataContainer.append(key, formData[key]);
         }
       });
