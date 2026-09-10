@@ -1,10 +1,11 @@
 // src/views/SetClassFees.jsx
 import React, { useState, useEffect } from 'react';
-import { Trash2, Edit2, Plus, Save, Loader2, AlertCircle, Lock } from 'lucide-react';
+import { Trash2, Edit2, Plus, Save, Loader2, AlertCircle, Lock, Building2 } from 'lucide-react';
 import API from '../api/axiosInstance';
 
-const SetClassFees = () => {
+const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
   // --- STATE PARAMETERS ---
+  const [selectedCampus, setSelectedCampus] = useState(defaultCampus);
   const [selectedClass, setSelectedClass] = useState('JSS 1');
   const [selectedTerm, setSelectedTerm] = useState('First Term');
   const [selectedSession, setSelectedSession] = useState('');
@@ -13,6 +14,13 @@ const SetClassFees = () => {
   const [activeStructures, setActiveStructures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+
+  // Sync prop changes if active campus filter updates externally
+  useEffect(() => {
+    if (defaultCampus && defaultCampus !== 'All Campuses') {
+      setSelectedCampus(defaultCampus);
+    }
+  }, [defaultCampus]);
 
   // 🟢 1. FETCH ACTIVE SYSTEM CONFIGURATION
   const fetchSystemSettings = async () => {
@@ -49,7 +57,7 @@ const SetClassFees = () => {
     fetchDashboardData();
   }, []);
 
-  // Sync workspace view when class or system-locked term/session adjusts
+  // Sync workspace view when class, campus, or system-locked term/session adjusts
   useEffect(() => {
     if (!selectedSession || !selectedTerm) return;
 
@@ -57,7 +65,8 @@ const SetClassFees = () => {
       (structure) =>
         structure.className === selectedClass &&
         structure.term === selectedTerm &&
-        structure.session === selectedSession
+        structure.session === selectedSession &&
+        (structure.campus === selectedCampus || (!structure.campus && selectedCampus === 'Emerald Campus'))
     );
 
     if (matchingStructure) {
@@ -72,7 +81,7 @@ const SetClassFees = () => {
     } else {
       setStructureItems([]);
     }
-  }, [selectedClass, selectedTerm, selectedSession, activeStructures]);
+  }, [selectedClass, selectedTerm, selectedSession, selectedCampus, activeStructures]);
 
   // --- INTERACTIVE MATRIX CONTROL HANDLERS ---
   const handleNameChange = (id, val) => {
@@ -128,6 +137,9 @@ const SetClassFees = () => {
   const handleEditStructure = (structure) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setSelectedClass(structure.className);
+    if (structure.campus) {
+      setSelectedCampus(structure.campus);
+    }
   };
 
   const handleSaveStructure = async () => {
@@ -148,6 +160,7 @@ const SetClassFees = () => {
         className: selectedClass,
         term: selectedTerm,
         session: selectedSession,
+        campus: selectedCampus,
         items: structureItems.map((item) => ({
           name: item.name.trim(),
           amount: Number(item.amount) || 0,
@@ -160,7 +173,7 @@ const SetClassFees = () => {
 
       if (data?.success) {
         alert(
-          `Fee structure for ${selectedClass} (${selectedSession} - ${selectedTerm}) saved successfully!`
+          `Fee structure for ${selectedClass} - ${selectedCampus} (${selectedSession} - ${selectedTerm}) saved successfully!`
         );
         await fetchDashboardData();
       } else {
@@ -211,6 +224,11 @@ const SetClassFees = () => {
     .filter((item) => item.checked)
     .reduce((sum, current) => sum + (Number(current.amount) || 0), 0);
 
+  // Filter Active Log display by selected campus
+  const filteredActiveStructures = activeStructures.filter(
+    (struct) => !selectedCampus || selectedCampus === 'All Campuses' || struct.campus === selectedCampus || (!struct.campus && selectedCampus === 'Emerald Campus')
+  );
+
   return (
     <div
       style={{
@@ -228,7 +246,7 @@ const SetClassFees = () => {
       <header
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justify: 'space-between',
           alignItems: 'center',
           marginBottom: '2rem',
           paddingBottom: '1rem',
@@ -248,7 +266,7 @@ const SetClassFees = () => {
             FEE STRUCTURE CONFIGURATION
           </h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-            Create and manage fee items and class fee structures
+            Create and manage campus-specific fee items and class fee structures
           </p>
         </div>
       </header>
@@ -305,7 +323,7 @@ const SetClassFees = () => {
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justify: 'center',
             }}
           >
             1
@@ -334,6 +352,45 @@ const SetClassFees = () => {
             borderBottom: '1px solid var(--border-color)',
           }}
         >
+          {/* 🏫 CAMPUS SELECTOR */}
+          <div>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '10px',
+                fontWeight: '900',
+                color: '#3b82f6',
+                textTransform: 'uppercase',
+                marginBottom: '0.5rem',
+                letterSpacing: '0.5px',
+              }}
+            >
+              <Building2 size={12} /> Target Campus *
+            </label>
+            <select
+              value={selectedCampus}
+              onChange={(e) => setSelectedCampus(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'var(--bg-input)',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: '700',
+                padding: '0.6rem',
+                borderRadius: '8px',
+                border: '1px solid #3b82f6',
+                outline: 'none',
+                cursor: 'pointer',
+                boxSizing: 'border-box',
+              }}
+            >
+              <option value="Emerald Campus">Emerald Campus</option>
+              <option value="Great Campus">Great Campus</option>
+            </select>
+          </div>
+
           <div>
             <label
               style={{
@@ -629,7 +686,7 @@ const SetClassFees = () => {
                       letterSpacing: '0.5px',
                     }}
                   >
-                    No structural entries loaded for {selectedSession} ({selectedTerm}).
+                    No structural entries loaded for {selectedCampus} - {selectedClass} ({selectedSession} - {selectedTerm}).
                     Click down below to begin appending lines.
                   </td>
                 </tr>
@@ -641,7 +698,7 @@ const SetClassFees = () => {
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justify: 'space-between',
             alignItems: 'center',
             marginTop: '1.5rem',
             paddingTop: '1.5rem',
@@ -757,7 +814,7 @@ const SetClassFees = () => {
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justify: 'center',
             }}
           >
             2
@@ -788,6 +845,7 @@ const SetClassFees = () => {
                   letterSpacing: '0.5px',
                 }}
               >
+                <th style={{ paddingBottom: '0.75rem' }}>Campus</th>
                 <th style={{ paddingBottom: '0.75rem' }}>Class</th>
                 <th style={{ paddingBottom: '0.75rem' }}>Term</th>
                 <th style={{ paddingBottom: '0.75rem' }}>Session</th>
@@ -805,8 +863,9 @@ const SetClassFees = () => {
               </tr>
             </thead>
             <tbody>
-              {activeStructures.map((structure) => {
+              {filteredActiveStructures.map((structure) => {
                 const totalAmt = Number(structure.totalAmount) || 0;
+                const campusDisplay = structure.campus || 'Emerald Campus';
                 return (
                   <tr
                     key={structure._id}
@@ -815,6 +874,21 @@ const SetClassFees = () => {
                       verticalAlign: 'middle',
                     }}
                   >
+                    <td style={{ padding: '1rem 0' }}>
+                      <span
+                        style={{
+                          backgroundColor: campusDisplay === 'Great Campus' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                          color: campusDisplay === 'Great Campus' ? '#c084fc' : '#60a5fa',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          border: campusDisplay === 'Great Campus' ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)'
+                        }}
+                      >
+                        {campusDisplay}
+                      </span>
+                    </td>
                     <td
                       style={{
                         padding: '1rem 0',
@@ -881,7 +955,7 @@ const SetClassFees = () => {
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
+                          justify: 'center',
                           gap: '0.5rem',
                         }}
                       >
@@ -920,10 +994,10 @@ const SetClassFees = () => {
                   </tr>
                 );
               })}
-              {!fetching && activeStructures.length === 0 && (
+              {!fetching && filteredActiveStructures.length === 0 && (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="7"
                     style={{
                       padding: '3rem 0',
                       textAlign: 'center',
@@ -931,7 +1005,7 @@ const SetClassFees = () => {
                       fontWeight: '600',
                     }}
                   >
-                    No system fee parameters saved on server.
+                    No system fee parameters saved on server for {selectedCampus}.
                   </td>
                 </tr>
               )}
