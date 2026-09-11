@@ -6,6 +6,7 @@ import API from '../api/axiosInstance';
 const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
   // --- STATE PARAMETERS ---
   const [activeFilterCampus, setActiveFilterCampus] = useState(defaultCampus);
+  // Default target form campus independently from global filter
   const [targetCampus, setTargetCampus] = useState(
     defaultCampus === 'All Campuses' ? 'Emerald Campus' : defaultCampus
   );
@@ -18,13 +19,10 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  // Sync prop changes if active campus filter updates externally
+  // Sync active global filter without overwriting user's active dropdown choice
   useEffect(() => {
     if (defaultCampus) {
       setActiveFilterCampus(defaultCampus);
-      if (defaultCampus !== 'All Campuses') {
-        setTargetCampus(defaultCampus);
-      }
     }
   }, [defaultCampus]);
 
@@ -72,7 +70,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
         structure.className === selectedClass &&
         structure.term === selectedTerm &&
         structure.session === selectedSession &&
-        (structure.campus === targetCampus || (!structure.campus && targetCampus === 'Emerald Campus'))
+        structure.campus === targetCampus
     );
 
     if (matchingStructure) {
@@ -162,11 +160,12 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
 
     setLoading(true);
     try {
+      // 🔒 Force explicit campus selection payload
       const payload = {
         className: selectedClass,
         term: selectedTerm,
         session: selectedSession,
-        campus: targetCampus, // 👈 Target dropdown value ("Great Campus"), NOT active filter ("All Campuses")
+        campus: targetCampus, // 👈 Target Campus dropdown selection strictly used
         targetCampus: targetCampus,
         items: structureItems.map((item) => ({
           name: item.name.trim(),
@@ -330,7 +329,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justify: 'center',
             }}
           >
             1
