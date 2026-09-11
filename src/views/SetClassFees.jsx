@@ -5,7 +5,10 @@ import API from '../api/axiosInstance';
 
 const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
   // --- STATE PARAMETERS ---
-  const [selectedCampus, setSelectedCampus] = useState(defaultCampus);
+  const [activeFilterCampus, setActiveFilterCampus] = useState(defaultCampus);
+  const [targetCampus, setTargetCampus] = useState(
+    defaultCampus === 'All Campuses' ? 'Emerald Campus' : defaultCampus
+  );
   const [selectedClass, setSelectedClass] = useState('JSS 1');
   const [selectedTerm, setSelectedTerm] = useState('First Term');
   const [selectedSession, setSelectedSession] = useState('');
@@ -17,8 +20,11 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
 
   // Sync prop changes if active campus filter updates externally
   useEffect(() => {
-    if (defaultCampus && defaultCampus !== 'All Campuses') {
-      setSelectedCampus(defaultCampus);
+    if (defaultCampus) {
+      setActiveFilterCampus(defaultCampus);
+      if (defaultCampus !== 'All Campuses') {
+        setTargetCampus(defaultCampus);
+      }
     }
   }, [defaultCampus]);
 
@@ -57,7 +63,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
     fetchDashboardData();
   }, []);
 
-  // Sync workspace view when class, campus, or system-locked term/session adjusts
+  // Sync workspace view when class, target campus, or system-locked term/session adjusts
   useEffect(() => {
     if (!selectedSession || !selectedTerm) return;
 
@@ -66,7 +72,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
         structure.className === selectedClass &&
         structure.term === selectedTerm &&
         structure.session === selectedSession &&
-        (structure.campus === selectedCampus || (!structure.campus && selectedCampus === 'Emerald Campus'))
+        (structure.campus === targetCampus || (!structure.campus && targetCampus === 'Emerald Campus'))
     );
 
     if (matchingStructure) {
@@ -81,7 +87,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
     } else {
       setStructureItems([]);
     }
-  }, [selectedClass, selectedTerm, selectedSession, selectedCampus, activeStructures]);
+  }, [selectedClass, selectedTerm, selectedSession, targetCampus, activeStructures]);
 
   // --- INTERACTIVE MATRIX CONTROL HANDLERS ---
   const handleNameChange = (id, val) => {
@@ -138,7 +144,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setSelectedClass(structure.className);
     if (structure.campus) {
-      setSelectedCampus(structure.campus);
+      setTargetCampus(structure.campus);
     }
   };
 
@@ -160,7 +166,8 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
         className: selectedClass,
         term: selectedTerm,
         session: selectedSession,
-        campus: selectedCampus,
+        campus: targetCampus, // 👈 Target dropdown value ("Great Campus"), NOT active filter ("All Campuses")
+        targetCampus: targetCampus,
         items: structureItems.map((item) => ({
           name: item.name.trim(),
           amount: Number(item.amount) || 0,
@@ -173,7 +180,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
 
       if (data?.success) {
         alert(
-          `Fee structure for ${selectedClass} - ${selectedCampus} (${selectedSession} - ${selectedTerm}) saved successfully!`
+          `Fee structure for ${selectedClass} - ${targetCampus} (${selectedSession} - ${selectedTerm}) saved successfully!`
         );
         await fetchDashboardData();
       } else {
@@ -224,9 +231,9 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
     .filter((item) => item.checked)
     .reduce((sum, current) => sum + (Number(current.amount) || 0), 0);
 
-  // Filter Active Log display by selected campus
+  // Filter Active Log display by selected active campus
   const filteredActiveStructures = activeStructures.filter(
-    (struct) => !selectedCampus || selectedCampus === 'All Campuses' || struct.campus === selectedCampus || (!struct.campus && selectedCampus === 'Emerald Campus')
+    (struct) => !activeFilterCampus || activeFilterCampus === 'All Campuses' || struct.campus === activeFilterCampus || (!struct.campus && activeFilterCampus === 'Emerald Campus')
   );
 
   return (
@@ -246,7 +253,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
       <header
         style={{
           display: 'flex',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '2rem',
           paddingBottom: '1rem',
@@ -323,7 +330,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center',
+              justifyContent: 'center',
             }}
           >
             1
@@ -370,8 +377,8 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
               <Building2 size={12} /> Target Campus *
             </label>
             <select
-              value={selectedCampus}
-              onChange={(e) => setSelectedCampus(e.target.value)}
+              value={targetCampus}
+              onChange={(e) => setTargetCampus(e.target.value)}
               style={{
                 width: '100%',
                 background: 'var(--bg-input)',
@@ -686,7 +693,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
                       letterSpacing: '0.5px',
                     }}
                   >
-                    No structural entries loaded for {selectedCampus} - {selectedClass} ({selectedSession} - {selectedTerm}).
+                    No structural entries loaded for {targetCampus} - {selectedClass} ({selectedSession} - {selectedTerm}).
                     Click down below to begin appending lines.
                   </td>
                 </tr>
@@ -1005,7 +1012,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
                       fontWeight: '600',
                     }}
                   >
-                    No system fee parameters saved on server for {selectedCampus}.
+                    No system fee parameters saved on server for {activeFilterCampus}.
                   </td>
                 </tr>
               )}
