@@ -16,8 +16,9 @@ const RATING_LABELS = {
 };
 
 const ExecutiveReviewDesk = ({ currentUser }) => {
-  // Check Executive Authority
+  // Check Executive Authority & Active Campus Context
   const isHM = currentUser?.role === 'headmaster' || currentUser?.schoolSection === 'PRIMARY';
+  const activeCampus = currentUser?.campus || 'Emerald Campus';
   
   const PRIMARY_CLASSES = ['KG 1', 'KG 2', 'Nursery 1', 'Nursery 2', 'Basic 1', 'Basic 2', 'Basic 3', 'Basic 4', 'Basic 5'];
   const SECONDARY_CLASSES = ['JSS 1', 'JSS 2', 'JSS 3', 'SSS 1', 'SSS 2', 'SSS 3'];
@@ -103,7 +104,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
     fetchSystemSettings();
   }, []);
 
-  // 2. FETCH STRICT CLASS ROSTER
+  // 2. FETCH STRICT CLASS ROSTER WITH CAMPUS ISOLATION
   const fetchClassReviews = async () => {
     if (!term || !session || !selectedClass) return;
 
@@ -116,7 +117,8 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
           term,
           session,
           status: statusFilter,
-          schoolSection: isHM ? 'PRIMARY' : 'SECONDARY'
+          schoolSection: isHM ? 'PRIMARY' : 'SECONDARY',
+          campus: activeCampus // 🔒 Strictly filter reviews by active executive campus
         }
       }).catch(() => null);
 
@@ -129,7 +131,8 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
       const res = await axiosInstance.get(`/students`, {
         params: { 
           assignedClass: selectedClass,
-          currentClass: selectedClass 
+          currentClass: selectedClass,
+          campus: activeCampus // 🔒 Strictly filter student list by active executive campus
         }
       });
       const list = res.data?.students || res.data || [];
@@ -138,7 +141,9 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         const target = selectedClass.replace(/\s+/g, '').toUpperCase();
         const cur = (s.currentClass || '').replace(/\s+/g, '').toUpperCase();
         const asg = (s.assignedClass || '').replace(/\s+/g, '').toUpperCase();
-        return cur === target || asg === target;
+        const matchesClass = cur === target || asg === target;
+        const matchesCampus = !s.campus || s.campus === activeCampus || activeCampus === 'All Campuses';
+        return matchesClass && matchesCampus;
       });
 
       setStudents(strictFiltered);
@@ -153,16 +158,16 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
     if (systemConfigLoaded) {
       fetchClassReviews();
     }
-  }, [selectedClass, term, session, statusFilter, systemConfigLoaded]);
+  }, [selectedClass, term, session, statusFilter, systemConfigLoaded, activeCampus]);
 
-  // 3. LOAD SINGLE STUDENT FULL REVIEW
+  // 3. LOAD SINGLE STUDENT FULL REVIEW WITH CAMPUS BINDING
   const handleSelectStudent = async (student) => {
     setActiveStudent(student);
     setLoading(true);
     setErrorMsg('');
     try {
       const res = await axiosInstance.get(
-        `/teachers/review-single?studentId=${student._id}&className=${encodeURIComponent(selectedClass)}&term=${encodeURIComponent(term)}&session=${encodeURIComponent(session)}`
+        `/teachers/review-single?studentId=${student._id}&className=${encodeURIComponent(selectedClass)}&term=${encodeURIComponent(term)}&session=${encodeURIComponent(session)}&campus=${encodeURIComponent(activeCampus)}`
       );
       if (res.data?.success) {
         setSingleReview(res.data.data);
@@ -177,7 +182,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
     }
   };
 
-  // 🟢 4. SUBMIT EXECUTIVE APPROVAL WITH EXACT CUMULATIVE AVERAGE & SUBJECTS ARRAY
+  // 4. SUBMIT EXECUTIVE APPROVAL WITH EXACT CUMULATIVE AVERAGE & CAMPUS BINDING
   const handleApprove = async () => {
     if (!activeStudent) return;
     setErrorMsg('');
@@ -186,7 +191,6 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
     const isFirstTerm = term.trim().toLowerCase() === 'first term';
     const rawSubjects = singleReview?.subjects || [];
 
-    // Format subjects with explicit cumulative values
     let cumulativeSum = 0;
     let subjectCount = 0;
 
@@ -219,7 +223,6 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
       };
     });
 
-    // Compute true cumulative overall average
     const calculatedOverallAvg = subjectCount > 0
       ? Math.round((cumulativeSum / subjectCount) * 100) / 100
       : Number(singleReview?.overallAverage || 0);
@@ -230,9 +233,10 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         className: selectedClass,
         term,
         session,
+        campus: activeCampus, // 🔒 Campus Isolated Sign-off
         schoolSection: isHM ? 'PRIMARY' : 'SECONDARY',
-        overallAverage: Number(calculatedOverallAvg), // 👈 Sends exact 83.41%
-        subjects: formattedSubjects,                 // 👈 Sends array with CUM B.F scores intact
+        overallAverage: Number(calculatedOverallAvg),
+        subjects: formattedSubjects,
         principalRemark,
         promotionDecision: term.toLowerCase().includes('third') ? promotionDecision : 'N/A',
         promotedToClass: promotionDecision === 'PROMOTED' ? promotedToClass : '',
@@ -265,6 +269,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         studentId: activeStudent._id,
         term,
         session,
+        campus: activeCampus, // 🔒 Campus Context
         rejectionReason
       };
 
@@ -349,6 +354,10 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
           <input type="text" value={session} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#38bdf8', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', cursor: 'not-allowed' }} />
         </div>
         <div>
+          <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>ACTIVE CAMPUS</label>
+          <input type="text" value={activeCampus} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#c084fc', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', cursor: 'not-allowed' }} />
+        </div>
+        <div>
           <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>TARGET CLASS</label>
           <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#fff', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold' }}>
             {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
@@ -387,7 +396,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#fff' }}>
               Students Awaiting Review ({students.length})
             </h3>
-            <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748b' }}>Click a student to view full result and take action</p>
+            <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748b' }}>Showing rosters for {activeCampus}</p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '720px', overflowY: 'auto', paddingRight: '4px' }}>
@@ -439,7 +448,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
             })}
             {students.length === 0 && !loading && (
               <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
-                No students matching status "{statusFilter}" found in {selectedClass}.
+                No students matching status "{statusFilter}" found in {selectedClass} at {activeCampus}.
               </div>
             )}
           </div>
@@ -489,8 +498,8 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
                 </h2>
                 <div style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <span>Admission No: <strong style={{ color: '#fff', fontFamily: 'monospace' }}>{currentStudentMeta?.admissionNo || 'N/A'}</strong></span>
-                  <span>Class: <strong style={{ color: '#fff' }}>{selectedClass}</strong> • Term: <strong style={{ color: '#38bdf8' }}>{term}</strong></span>
-                  <span>Session: <strong style={{ color: '#38bdf8' }}>{session}</strong></span>
+                  <span>Class: <strong style={{ color: '#fff' }}>{selectedClass}</strong> • Campus: <strong style={{ color: '#c084fc' }}>{activeCampus}</strong></span>
+                  <span>Term: <strong style={{ color: '#38bdf8' }}>{term}</strong> • Session: <strong style={{ color: '#38bdf8' }}>{session}</strong></span>
                 </div>
               </div>
 
