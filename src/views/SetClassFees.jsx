@@ -6,10 +6,11 @@ import API from '../api/axiosInstance';
 const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
   // --- STATE PARAMETERS ---
   const [activeFilterCampus, setActiveFilterCampus] = useState(defaultCampus);
-  // Default target form campus independently from global filter
+  // Independent form target campus state (prevents defaulting back when filter is "All Campuses")
   const [targetCampus, setTargetCampus] = useState(
-    defaultCampus === 'All Campuses' ? 'Emerald Campus' : defaultCampus
+    defaultCampus && defaultCampus !== 'All Campuses' ? defaultCampus : 'Great Campus'
   );
+
   const [selectedClass, setSelectedClass] = useState('JSS 1');
   const [selectedTerm, setSelectedTerm] = useState('First Term');
   const [selectedSession, setSelectedSession] = useState('');
@@ -19,7 +20,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  // Sync active global filter without overwriting user's active dropdown choice
+  // Sync active global filter without overriding the user's explicit target campus selection
   useEffect(() => {
     if (defaultCampus) {
       setActiveFilterCampus(defaultCampus);
@@ -43,9 +44,11 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
     }
   };
 
+  // 🟢 2. FETCH ALL FEE STRUCTURES LOG (Fetches across all campuses)
   const fetchDashboardData = async () => {
     try {
-      const { data } = await API.get('/finance/structures');
+      setFetching(true);
+      const { data } = await API.get('/finance/structures?campus=All%20Campuses');
       if (data?.success) {
         setActiveStructures(data.data || []);
       }
@@ -232,7 +235,11 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
 
   // Filter Active Log display by selected active campus
   const filteredActiveStructures = activeStructures.filter(
-    (struct) => !activeFilterCampus || activeFilterCampus === 'All Campuses' || struct.campus === activeFilterCampus || (!struct.campus && activeFilterCampus === 'Emerald Campus')
+    (struct) =>
+      !activeFilterCampus ||
+      activeFilterCampus === 'All Campuses' ||
+      struct.campus === activeFilterCampus ||
+      (!struct.campus && activeFilterCampus === 'Emerald Campus')
   );
 
   return (
@@ -329,7 +336,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center',
+              justifyContent: 'center',
             }}
           >
             1
@@ -704,7 +711,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
         <div
           style={{
             display: 'flex',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginTop: '1.5rem',
             paddingTop: '1.5rem',
@@ -883,13 +890,19 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
                     <td style={{ padding: '1rem 0' }}>
                       <span
                         style={{
-                          backgroundColor: campusDisplay === 'Great Campus' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                          backgroundColor:
+                            campusDisplay === 'Great Campus'
+                              ? 'rgba(168, 85, 247, 0.15)'
+                              : 'rgba(59, 130, 246, 0.15)',
                           color: campusDisplay === 'Great Campus' ? '#c084fc' : '#60a5fa',
                           padding: '2px 8px',
                           borderRadius: '4px',
                           fontSize: '11px',
                           fontWeight: '800',
-                          border: campusDisplay === 'Great Campus' ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)'
+                          border:
+                            campusDisplay === 'Great Campus'
+                              ? '1px solid rgba(168, 85, 247, 0.3)'
+                              : '1px solid rgba(59, 130, 246, 0.3)',
                         }}
                       >
                         {campusDisplay}
@@ -961,7 +974,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justify: 'center',
+                          justifyContent: 'center',
                           gap: '0.5rem',
                         }}
                       >
