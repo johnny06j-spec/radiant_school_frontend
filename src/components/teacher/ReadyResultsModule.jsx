@@ -4,7 +4,6 @@ import { Save, CheckCircle2, AlertCircle, Send, ShieldAlert, ShieldCheck, Loader
 import axiosInstance from '../../api/axiosInstance';
 import ExecutiveReviewDesk from '../admin/ExecutiveReviewDesk';
 
-// 🎯 Primary vs Secondary Rating Scale Labels
 const getPrimaryRatingLabel = (grade) => {
   switch (grade) {
     case 'A': return 'Excellent';
@@ -32,9 +31,6 @@ const getSecondaryRatingLabel = (grade) => {
 const RATING_SCALE_PRIMARY = ['A', 'B', 'C', 'D', 'E', 'F'];
 const RATING_SCALE_SECONDARY = ['A*', 'A', 'B', 'C', 'D', 'E'];
 
-/**
- * 🎯 Precise Grade Evaluator for Primary and Secondary Sections
- */
 const getOverallGradeAndRemark = (score, schoolSection = 'SECONDARY') => {
   const num = Number(score) || 0;
 
@@ -47,7 +43,6 @@ const getOverallGradeAndRemark = (score, schoolSection = 'SECONDARY') => {
     return { grade: 'F', remark: 'POOR' };
   }
 
-  // Secondary School Scale
   if (num >= 90) return { grade: 'A*', remark: 'EXCELLENT' };
   if (num >= 70) return { grade: 'A', remark: 'VERY GOOD' };
   if (num >= 60) return { grade: 'B', remark: 'GOOD' };
@@ -62,7 +57,6 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
   const [activeTerm, setActiveTerm] = useState('First Term');
   const [profile, setProfile] = useState(initialProfile || {});
 
-  // Fetch Fresh Profile on Mount
   useEffect(() => {
     const refreshProfile = async () => {
       try {
@@ -89,7 +83,6 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
   const activeRatingScale = isPrimary ? RATING_SCALE_PRIMARY : RATING_SCALE_SECONDARY;
   const getRatingLabelFn = isPrimary ? getPrimaryRatingLabel : getSecondaryRatingLabel;
 
-  // Available Classes Dropdown
   const availableClasses = useMemo(() => {
     const classSet = new Set();
     
@@ -133,7 +126,6 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
   const [saving, setSaving] = useState(false);
   const [actionMessage, setActionMessage] = useState({ type: '', text: '' });
 
-  // Permission Evaluation
   const isOfficialClassTeacherForSelectedClass = useMemo(() => {
     if (!selectedClass) return false;
     
@@ -155,7 +147,6 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
     return isCTFlag && isMatchingClass;
   }, [profile, selectedClass, isPrimary]);
 
-  // Initialise System Settings
   useEffect(() => {
     const initData = async () => {
       try {
@@ -181,7 +172,7 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
     }
   }, [profile, availableClasses]);
 
-  // Fetch Class Roster
+  // Fetch Class Roster with Campus Isolation
   useEffect(() => {
     if (!selectedClass || isExecutive) return;
 
@@ -191,7 +182,10 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
         let roster = [];
 
         const studentsRes = await axiosInstance.get('/students', { 
-          params: { assignedClass: selectedClass } 
+          params: { 
+            assignedClass: selectedClass,
+            campus: profile?.campus || 'Emerald Campus' // 🔒 Campus Filter
+          } 
         }).catch(() => null);
 
         if (studentsRes?.data?.students && studentsRes.data.students.length > 0) {
@@ -210,7 +204,8 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
               className: selectedClass, 
               subjectName: profile?.subjectAllocations?.[0]?.subjectName || 'ENGLISH', 
               term: activeTerm, 
-              session: activeSession 
+              session: activeSession,
+              campus: profile?.campus || 'Emerald Campus' // 🔒 Campus Filter
             }
           }).catch(() => null);
 
@@ -243,7 +238,7 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
     fetchClassRoster();
   }, [selectedClass, activeTerm, activeSession, profile, isExecutive]);
 
-  // Fetch Student Review Details
+  // Fetch Student Review Details with Campus Context
   useEffect(() => {
     if (!selectedStudentId || !selectedClass || isExecutive) return;
 
@@ -258,6 +253,7 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
             className: selectedClass, 
             term: activeTerm, 
             session: activeSession,
+            campus: profile?.campus || 'Emerald Campus', // 🔒 Campus Filter
             admissionNo: selectedStudent?.admissionNo !== 'N/A' ? selectedStudent?.admissionNo : undefined,
             studentName: selectedStudent?.name
           }
@@ -285,9 +281,8 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
     };
 
     fetchReview();
-  }, [selectedStudentId, activeTerm, activeSession, selectedClass, studentsList, isExecutive]);
+  }, [selectedStudentId, activeTerm, activeSession, selectedClass, studentsList, isExecutive, profile]);
 
-  // Save Review Draft or Submit
   const handleSaveOrSubmit = async (submitAction = 'DRAFT') => {
     if (!isOfficialClassTeacherForSelectedClass) {
       setActionMessage({ type: 'error', text: 'Unauthorized: Only the assigned Class Teacher can submit or edit comments for this class.' });
@@ -304,6 +299,7 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
         schoolSection: profile?.schoolSection,
         term: activeTerm,
         session: activeSession,
+        campus: profile?.campus || 'Emerald Campus', // 🔒 Campus Included
         characterDevelopment: characterDev,
         practicalSkills,
         teacherRemark,
@@ -424,7 +420,6 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
       {/* SUBJECTS & SCORES CARD */}
       <div style={{ backgroundColor: '#070c14', border: '1px solid #1e293b', borderRadius: '12px', padding: '12px 14px', width: '100%', overflow: 'hidden' }}>
         
-        {/* RESPONSIVE SCORE BANNER */}
         <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px' }}>
           <h3 style={{ margin: 0, fontSize: '13px', color: '#60a5fa', textTransform: 'uppercase' }}>SUBJECTS & SCORES ({profile?.schoolSection || 'PRIMARY'})</h3>
           
@@ -449,7 +444,6 @@ const ReadyResultsModule = ({ profile: initialProfile }) => {
           </div>
         </div>
 
-        {/* SCROLLABLE TABLE WRAPPER */}
         {loadingReview ? (
           <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
             <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px auto', display: 'block' }} />

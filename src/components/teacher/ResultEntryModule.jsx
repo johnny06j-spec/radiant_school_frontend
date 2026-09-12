@@ -20,7 +20,6 @@ const evaluateGradeAndRemark = (score, isSecondary) => {
   const val = Number(score) || 0;
 
   if (isSecondary) {
-    // 🏫 Secondary School Rating Scale
     if (val >= 90) return { grade: 'A*', remark: 'EXCELLENT', bg: '#064e3b', border: '#10b981', color: '#34d399' };
     if (val >= 70) return { grade: 'A',  remark: 'VERY GOOD', bg: '#047857', border: '#059669', color: '#6ee7b7' };
     if (val >= 60) return { grade: 'B',  remark: 'GOOD',      bg: '#082f49', border: '#38bdf8', color: '#7dd3fc' };
@@ -29,7 +28,6 @@ const evaluateGradeAndRemark = (score, isSecondary) => {
     if (val >= 30) return { grade: 'E',  remark: 'WEAK',      bg: '#78350f', border: '#d97706', color: '#fef08a' };
     return { grade: 'F', remark: 'FAIL', bg: '#4c0519', border: '#f43f5e', color: '#fda4af' };
   } else {
-    // 🏫 Primary School Rating Scale
     if (val >= 86) return { grade: 'A', remark: 'EXCELLENT', bg: '#064e3b', border: '#10b981', color: '#34d399' };
     if (val >= 70) return { grade: 'B', remark: 'VERY GOOD', bg: '#082f49', border: '#38bdf8', color: '#7dd3fc' };
     if (val >= 50) return { grade: 'C', remark: 'GOOD',      bg: '#312e81', border: '#6366f1', color: '#a5b4fc' };
@@ -42,33 +40,27 @@ const evaluateGradeAndRemark = (score, isSecondary) => {
 const ResultEntryModule = ({ profile }) => {
   const [selectedAllocation, setSelectedAllocation] = useState(null);
 
-  // 🔒 Admin System Settings Controlled States
   const [activeSession, setActiveSession] = useState('2026/2027');
   const [activeTerm, setActiveTerm] = useState('First Term');
   const [fetchingSettings, setFetchingSettings] = useState(true);
 
-  // Grid Data & Action States
   const [gridData, setGridData] = useState([]);
   const [gridLoading, setGridLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [actionMessage, setActionMessage] = useState({ type: '', text: '' });
 
-  // Status & Locking States (Class and Subject Specific)
   const [classStatus, setClassStatus] = useState('Draft');
   const [isGridLockedBackend, setIsGridLockedBackend] = useState(false);
   const [rejectionFeedback, setRejectionFeedback] = useState('');
 
-  // Section determinations
   const isSecondarySetup = profile?.schoolSection === 'SECONDARY';
   const isPreschoolClass = (profile?.assignedClass || '').trim().toUpperCase().startsWith('KG') || 
                            (profile?.assignedClass || '').trim().toUpperCase().startsWith('NURSERY');
   const targetPrimaryTrackSubjects = isPreschoolClass ? PRE_SCHOOL_TRACK : BASIC_SCHOOL_TRACK;
 
-  // 🔒 Check strict lock condition per selected class and subject
   const isEntryLocked = isGridLockedBackend || ['Submitted', 'Submitted for Review', 'Approved', 'Approved by Principal', 'Released'].includes(classStatus);
   const isReturnedForRevision = classStatus === 'Returned for Revision';
 
-  // 1. Initialise Admin System Settings
   useEffect(() => {
     const initSystemSettings = async () => {
       setFetchingSettings(true);
@@ -98,7 +90,7 @@ const ResultEntryModule = ({ profile }) => {
     }
   }, [profile]);
 
-  // 2. Fetch Student Roster Grid strictly scoped by Class & Subject
+  // 2. Fetch Student Roster Grid strictly scoped by Class, Subject AND Campus
   useEffect(() => {
     if (!selectedAllocation || !selectedAllocation.className || fetchingSettings) return;
 
@@ -111,7 +103,8 @@ const ResultEntryModule = ({ profile }) => {
             className: selectedAllocation.className.trim(), 
             subjectName: selectedAllocation.subjectName.trim(),
             term: activeTerm.trim(),
-            session: activeSession.trim()
+            session: activeSession.trim(),
+            campus: profile?.campus || 'Emerald Campus' // 🔒 Include Campus
           }
         });
 
@@ -165,9 +158,8 @@ const ResultEntryModule = ({ profile }) => {
     };
 
     syncGradingGrid();
-  }, [selectedAllocation, activeTerm, activeSession, fetchingSettings]);
+  }, [selectedAllocation, activeTerm, activeSession, fetchingSettings, profile]);
 
-  // 3. Dynamic Score Change Handler with Correct Upper Caps
   const handleScoreChange = (index, field, value) => {
     if (isEntryLocked) return;
 
@@ -207,7 +199,6 @@ const ResultEntryModule = ({ profile }) => {
     setGridData(updatedGrid);
   };
 
-  // 4. Save Draft Payload Handler
   const handleSaveDraft = async () => {
     if (isEntryLocked) return;
 
@@ -235,6 +226,7 @@ const ResultEntryModule = ({ profile }) => {
         subjectName: selectedAllocation.subjectName.trim(),
         term: activeTerm.trim(),
         session: activeSession.trim(),
+        campus: profile?.campus || 'Emerald Campus', // 🔒 Include Campus
         studentsScores: structuralPayload
       });
 
@@ -392,30 +384,17 @@ const ResultEntryModule = ({ profile }) => {
                 <thead>
                   <tr style={{ backgroundColor: '#05080f', borderBottom: '1px solid #1e293b', color: '#64748b', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                     <th style={{ padding: '10px 12px', minWidth: '130px' }}>Student Particulars</th>
-                    
-                    {/* TEST 1 */}
                     <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '65px' }}>{isSecondarySetup ? 'TEST 1 (15)' : 'TEST 1 (20)'}</th>
-                    
-                    {/* TEST 2 */}
                     <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '65px' }}>{isSecondarySetup ? 'TEST 2 (15)' : 'TEST 2 (20)'}</th>
-                    
-                    {/* PROJECT (Secondary Only) */}
                     {isSecondarySetup && <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '65px' }}>PROJ (15)</th>}
-                    
-                    {/* EXAM */}
                     <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '65px' }}>{isSecondarySetup ? 'EXAM (55)' : 'EXAM (60)'}</th>
-                    
-                    {/* TOTAL (A) */}
                     <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '75px' }}>TOTAL A</th>
-
-                    {/* Dynamic Cumulative Columns for 2nd & 3rd Term */}
                     {activeTerm !== 'First Term' && (
                       <>
                         <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '75px', color: '#c084fc', borderLeft: '1px solid #1e293b' }}>CUM B.F B</th>
                         <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '85px', color: '#c084fc', backgroundColor: 'rgba(88, 28, 135, 0.15)' }}>AVG (A+B)/2</th>
                       </>
                     )}
-
                     <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '55px' }}>GRADE</th>
                     <th style={{ padding: '10px 6px', textAlign: 'center', minWidth: '75px' }}>REMARK</th>
                   </tr>
@@ -430,35 +409,23 @@ const ResultEntryModule = ({ profile }) => {
                           <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '11px' }}>{row.name || row.studentName || 'Unknown Student'}</div>
                           <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#64748b' }}>{row.admissionNo || `ID-#${idx}`}</div>
                         </td>
-
-                        {/* TEST 1 */}
                         <td style={{ padding: '6px', textAlign: 'center' }}>
                           <input type="number" min="0" max={isSecondarySetup ? 15 : 20} disabled={isEntryLocked} value={row.ca1 ?? ''} onChange={(e) => handleScoreChange(idx, 'ca1', e.target.value)} style={{ width: '48px', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
                         </td>
-
-                        {/* TEST 2 */}
                         <td style={{ padding: '6px', textAlign: 'center' }}>
                           <input type="number" min="0" max={isSecondarySetup ? 15 : 20} disabled={isEntryLocked} value={row.ca2 ?? ''} onChange={(e) => handleScoreChange(idx, 'ca2', e.target.value)} style={{ width: '48px', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
                         </td>
-
-                        {/* PROJECT (Secondary Only) */}
                         {isSecondarySetup && (
                           <td style={{ padding: '6px', textAlign: 'center' }}>
                             <input type="number" min="0" max="15" disabled={isEntryLocked} value={row.project ?? ''} onChange={(e) => handleScoreChange(idx, 'project', e.target.value)} style={{ width: '48px', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
                           </td>
                         )}
-
-                        {/* EXAM */}
                         <td style={{ padding: '6px', textAlign: 'center' }}>
                           <input type="number" min="0" max={isSecondarySetup ? 55 : 60} disabled={isEntryLocked} value={row.exam ?? ''} onChange={(e) => handleScoreChange(idx, 'exam', e.target.value)} style={{ width: '48px', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: isEntryLocked ? '#1e293b' : '#05080f', color: isEntryLocked ? '#94a3b8' : '#fff', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', cursor: isEntryLocked ? 'not-allowed' : 'text' }} />
                         </td>
-
-                        {/* TOTAL (A) */}
                         <td style={{ padding: '10px 6px', textAlign: 'center', fontWeight: '900', fontFamily: 'monospace', color: '#60a5fa' }}>
                           {row.totalScore || 0}%
                         </td>
-
-                        {/* CUMULATIVE SECOND & THIRD TERM COLUMNS */}
                         {activeTerm !== 'First Term' && (
                           <>
                             <td style={{ padding: '10px 6px', textAlign: 'center', fontWeight: 'bold', color: '#c084fc', borderLeft: '1px solid #1e293b' }}>
@@ -469,15 +436,11 @@ const ResultEntryModule = ({ profile }) => {
                             </td>
                           </>
                         )}
-
-                        {/* GRADE */}
                         <td style={{ padding: '10px 6px', textAlign: 'center' }}>
                           <span style={{ padding: '3px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10px', fontFamily: 'monospace', backgroundColor: evaluated.bg, border: `1px solid ${evaluated.border}`, color: evaluated.color }}>
                             {evaluated.grade}
                           </span>
                         </td>
-
-                        {/* REMARK */}
                         <td style={{ padding: '10px 6px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', color: evaluated.color }}>
                           {evaluated.remark}
                         </td>
