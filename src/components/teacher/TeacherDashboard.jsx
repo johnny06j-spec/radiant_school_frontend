@@ -1,6 +1,6 @@
 // src/components/teacher/TeacherDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Building2 } from 'lucide-react';
 
 import TeacherSidebar from './TeacherSidebar';
 import TeacherOverview from './TeacherOverview';
@@ -37,6 +37,7 @@ const TeacherDashboard = () => {
 
   const isExecutive = profile?.role === 'headmaster' || profile?.role === 'principal' || profile?.department === 'Executive Administration';
   const roleTitle = profile?.role === 'headmaster' ? 'Headmaster' : (profile?.role === 'principal' ? 'Principal' : 'Teacher');
+  const activeCampus = profile?.campus || 'Emerald Campus';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#020617', color: '#f8fafc', fontFamily: 'sans-serif', display: 'flex' }}>
@@ -67,9 +68,14 @@ const TeacherDashboard = () => {
             <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>RADIANT ERP</span>
           </div>
 
-          <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '9999px', backgroundColor: isExecutive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(30, 58, 138, 0.6)', color: isExecutive ? '#34d399' : '#93c5fd', border: `1px solid ${isExecutive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}` }}>
-            {profile?.schoolSection} • {roleTitle.toUpperCase()}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '4px', backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+              {activeCampus}
+            </span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '9999px', backgroundColor: isExecutive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(30, 58, 138, 0.6)', color: isExecutive ? '#34d399' : '#93c5fd', border: `1px solid ${isExecutive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}` }}>
+              {profile?.schoolSection} • {roleTitle.toUpperCase()}
+            </span>
+          </div>
         </header>
 
         {/* WORKSPACE PAGE CONTENT CONTAINER */}
@@ -85,6 +91,11 @@ const TeacherDashboard = () => {
                 {isExecutive ? `${roleTitle} Executive Sign-Off Portal` : 'Faculty Reference ID:'} <span style={{ color: '#fff', fontFamily: 'monospace' }}>{profile?.username || profile?.email}</span>
               </p>
             </div>
+
+            {/* 🏫 DESKTOP CAMPUS SCOPE BADGE */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', color: '#60a5fa', padding: '6px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold' }}>
+              <Building2 size={15} /> <span>{activeCampus}</span>
+            </div>
           </div>
 
           {/* DYNAMIC TAB COMPONENT SWITCH */}
@@ -93,15 +104,15 @@ const TeacherDashboard = () => {
           )}
 
           {activeTab === 'RESULT_ENTRY' && !isExecutive && (
-            <ResultEntryModule profile={profile} />
+            <ResultEntryModule profile={profile} campus={activeCampus} />
           )}
 
           {activeTab === 'ATTENDANCE' && !isExecutive && (
-            <AttendanceModule profile={profile} />
+            <AttendanceModule profile={profile} campus={activeCampus} />
           )}
 
           {activeTab === 'READY_RESULTS' && (
-            <ReadyResultsModule profile={profile} isExecutive={isExecutive} />
+            <ReadyResultsModule profile={profile} isExecutive={isExecutive} campus={activeCampus} />
           )}
         </main>
       </div>

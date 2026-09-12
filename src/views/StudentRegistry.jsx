@@ -1,10 +1,13 @@
 // src/views/StudentRegistry.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { ArrowLeft, UserPlus, Loader2, CheckCircle2, Copy, Check, Building2 } from "lucide-react";
 import { useStudentForm } from "../hooks/useStudentForm";
 import { PersonalInfoSection, GuardiansSection } from "./FormSections";
 
-const StudentRegistry = ({ setActiveTab, studentId, defaultCampus = 'Emerald Campus' }) => {
+const StudentRegistry = ({ setActiveTab, studentId, defaultCampus = 'Great Campus' }) => {
+  // Resolve valid default campus string if parent passes "All Campuses"
+  const activeCampus = (!defaultCampus || defaultCampus === 'All Campuses') ? 'Great Campus' : defaultCampus;
+
   const {
     isEditMode,
     isLoadingProfile,
@@ -22,7 +25,19 @@ const StudentRegistry = ({ setActiveTab, studentId, defaultCampus = 'Emerald Cam
     setSelectedFile,
     setImagePreview,
     handleSubmit
-  } = useStudentForm(setActiveTab, studentId, defaultCampus);
+  } = useStudentForm(setActiveTab, studentId, activeCampus);
+
+  // Sync active target campus directly to form data state on mount if not in edit mode
+  useEffect(() => {
+    if (!isEditMode && !formData.campus) {
+      handleChange({
+        target: {
+          name: "campus",
+          value: activeCampus
+        }
+      });
+    }
+  }, [isEditMode, activeCampus, formData.campus, handleChange]);
 
   const styles = {
     container: { 
@@ -155,7 +170,7 @@ const StudentRegistry = ({ setActiveTab, studentId, defaultCampus = 'Emerald Cam
                 <label style={styles.inputLabel}>TARGET CAMPUS *</label>
                 <select
                   name="campus"
-                  value={formData.campus || defaultCampus}
+                  value={formData.campus || activeCampus}
                   onChange={handleChange}
                   style={{
                     ...styles.textInput,
@@ -175,6 +190,7 @@ const StudentRegistry = ({ setActiveTab, studentId, defaultCampus = 'Emerald Cam
           <PersonalInfoSection 
             formData={{
               ...formData,
+              campus: formData.campus || activeCampus,
               intakeTerm: formData.intakeTerm || formData.admittedTerm || "First Term",
               admittedSession: formData.admittedSession || formData.intakeSession || "2026/2027"
             }} 

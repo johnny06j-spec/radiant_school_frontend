@@ -1,17 +1,28 @@
 // src/components/teacher/TeacherOverview.jsx
 import React from 'react';
-import { BookOpen, Users, Award } from 'lucide-react';
+import { BookOpen, Users, Award, Building2 } from 'lucide-react';
 
 const TeacherOverview = ({ profile, summary, onSelectTab }) => {
   const isPrimary = profile?.schoolSection === 'PRIMARY';
   const isCT = isPrimary ? true : Boolean(profile?.isClassTeacher);
   const ctClass = isPrimary ? (profile?.assignedClass || 'KG 1') : (profile?.classTeacherOf || 'N/A');
+  const activeCampus = profile?.campus || 'Emerald Campus';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* STATS CARDS GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
         
+        {/* 🏫 CAMPUS ASSIGNMENT CARD */}
+        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#38bdf8', marginBottom: '12px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.5px' }}>Assigned Campus</span>
+            <Building2 size={20} />
+          </div>
+          <p style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#38bdf8' }}>{activeCampus}</p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>Institutional Campus Scope</p>
+        </div>
+
         <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#60a5fa', marginBottom: '12px' }}>
             <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.5px' }}>Assigned Track</span>
