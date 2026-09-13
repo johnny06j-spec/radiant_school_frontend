@@ -9,7 +9,10 @@ import axiosInstance from '../../api/axiosInstance';
 const PRIMARY_CLASSES = ['KG 1', 'KG 2', 'Nursery 1', 'Nursery 2', 'Basic 1', 'Basic 2', 'Basic 3', 'Basic 4', 'Basic 5'];
 const SECONDARY_CLASSES = ['JSS 1', 'JSS 2', 'JSS 3', 'SSS 1', 'SSS 2', 'SSS 3'];
 
-export default function AdminReleaseDesk() {
+export default function AdminReleaseDesk({ currentUser }) {
+  // --- CAMPUS CONTEXT ---
+  const activeCampus = currentUser?.campus || 'Emerald Campus';
+
   const [activeTab, setActiveTab] = useState('queue');
   const [section, setSection] = useState('PRIMARY');
   const [className, setClassName] = useState('KG 1');
@@ -31,7 +34,7 @@ export default function AdminReleaseDesk() {
     try {
       setLoading(true);
       const res = await axiosInstance.get('/teachers/admin-approved-reviews', {
-        params: { className, term, session, section, _t: Date.now() }
+        params: { className, term, session, section, campus: activeCampus, _t: Date.now() }
       });
       setQueue(res.data?.data || []);
     } catch (err) {
@@ -46,7 +49,7 @@ export default function AdminReleaseDesk() {
     try {
       setLoading(true);
       const res = await axiosInstance.get('/teachers/released-history', {
-        params: { className, term, session, _t: Date.now() }
+        params: { className, term, session, campus: activeCampus, _t: Date.now() }
       });
       setHistory(res.data?.data || []);
     } catch (err) {
@@ -63,11 +66,11 @@ export default function AdminReleaseDesk() {
     } else {
       fetchHistory();
     }
-  }, [className, term, session, section, activeTab]);
+  }, [className, term, session, section, activeTab, activeCampus]);
 
   const handleRelease = async () => {
     if (queue.length === 0) return;
-    if (!window.confirm(`Publish ${queue.length} approved result(s) for ${className} (${term}, ${session}) to Student Portals?`)) {
+    if (!window.confirm(`Publish ${queue.length} approved result(s) for ${className} (${term}, ${session}) at ${activeCampus} to Student Portals?`)) {
       return;
     }
 
@@ -78,7 +81,8 @@ export default function AdminReleaseDesk() {
       const res = await axiosInstance.post('/teachers/admin-release-results', {
         className,
         term,
-        session
+        session,
+        campus: activeCampus
       });
       setFeedback({ type: 'success', msg: res.data?.message || `Successfully released results for ${className}.` });
       fetchQueue();
@@ -105,6 +109,7 @@ export default function AdminReleaseDesk() {
         className,
         term,
         session,
+        campus: activeCampus,
         reason: returnModal.reason.trim()
       });
 
@@ -126,6 +131,7 @@ export default function AdminReleaseDesk() {
           term,
           session,
           className,
+          campus: activeCampus,
           _t: Date.now()
         },
         responseType: 'text'
@@ -151,7 +157,7 @@ export default function AdminReleaseDesk() {
         <div>
           <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800' }}>Result Release Desk</h2>
           <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-            Audit and publish verified Headmaster & Principal signed-off results to student portals.
+            Audit and publish verified Headmaster & Principal signed-off results to student portals • <strong style={{ color: 'var(--accent-primary)' }}>{activeCampus}</strong>
           </p>
         </div>
 
@@ -244,7 +250,7 @@ export default function AdminReleaseDesk() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800' }}>{className} Release Queue</h3>
-                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>Genuinely signed-off results waiting for publication</p>
+                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>Genuinely signed-off results waiting for publication at {activeCampus}</p>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -306,7 +312,7 @@ export default function AdminReleaseDesk() {
                   )) : (
                     <tr>
                       <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                        {loading ? 'Checking approval state...' : `No signed-off results waiting for release in ${className} (${term}, ${session}).`}
+                        {loading ? 'Checking approval state...' : `No signed-off results waiting for release in ${className} (${term}, ${session}) at ${activeCampus}.`}
                       </td>
                     </tr>
                   )}
@@ -320,7 +326,7 @@ export default function AdminReleaseDesk() {
         <div style={{ backgroundColor: 'var(--bg-surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
           <div style={{ marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800' }}>Released Archive</h3>
-            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>History of successfully published results for {className} ({term}, {session})</p>
+            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>History of successfully published results for {className} ({term}, {session}) at {activeCampus}</p>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
@@ -355,7 +361,7 @@ export default function AdminReleaseDesk() {
                 )) : (
                   <tr>
                     <td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                      No published results archived for {className} ({term}, {session}).
+                      No published results archived for {className} ({term}, {session}) at {activeCampus}.
                     </td>
                   </tr>
                 )}
