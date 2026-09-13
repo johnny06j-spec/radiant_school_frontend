@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle, Clock, XCircle, FileText, Save, 
-  Eye, FileSpreadsheet, CheckCheck, Lock, UserCheck, ShieldAlert
+  Eye, FileSpreadsheet, CheckCheck, Lock, UserCheck 
 } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
 
@@ -97,26 +97,25 @@ export default function TeacherAttendanceDesk({ currentUser }) {
           
           <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 10px 0' }}>Class Teacher Assignment Required</h2>
           <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6', margin: '0 0 24px 0' }}>
-            Only the teacher explicitly assigned as the <strong style={{ color: '#38bdf8' }}>Class Teacher</strong> for <strong>{className}</strong> by the administrator can take and modify daily attendance for this class.
+            Only the designated Class Teacher for <strong style={{ color: '#38bdf8' }}>{className}</strong> can mark and manage daily attendance for this class.
           </p>
 
           <div style={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '12px', padding: '20px', textAlign: 'left', marginBottom: '24px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px' }}>How Access Rights Work:</div>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#60a5fa', textTransform: 'uppercase', marginBottom: '12px' }}>
+              HOW ACCESS RIGHTS WORK:
+            </div>
             
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'flex-start' }}>
-              <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', flexShrink: 0 }}>1</span>
-              <span style={{ fontSize: '12px', color: '#cbd5e1' }}>School Management assigns one designated Class Teacher per class.</span>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'flex-start' }}>
-              <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', flexShrink: 0 }}>2</span>
-              <span style={{ fontSize: '12px', color: '#cbd5e1' }}>Only that assigned teacher can view and edit daily attendance registers for their class.</span>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', flexShrink: 0 }}>3</span>
-              <span style={{ fontSize: '12px', color: '#cbd5e1' }}>Subject teachers (even if teaching the class) cannot mark class attendance to guarantee audit compliance.</span>
-            </div>
+            <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5' }}>
+              <li>
+                <strong>Primary Section:</strong> Class teachers are automatically assigned to their room (e.g., KG 1, Primary 2).
+              </li>
+              <li>
+                <strong>Secondary Section:</strong> School management explicitly assigns one designated Class Teacher per secondary arm (JSS 1 - SSS 3).
+              </li>
+              <li>
+                Subject teachers taking secondary classes cannot mark daily register attendance unless assigned as Class Teacher for that form.
+              </li>
+            </ul>
           </div>
 
           <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.25)', borderRadius: '8px', padding: '10px 14px', color: '#22c55e', fontSize: '12px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
