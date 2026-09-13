@@ -4,7 +4,10 @@ import { Search, Users, AlertTriangle, FileText, Loader2, SlidersHorizontal } fr
 import API from '../api/axiosInstance';
 import AdjustmentModal from '../components/admin/AdjustmentModal';
 
-const PaymentsDesk = () => {
+const PaymentsDesk = ({ currentUser }) => {
+  // --- CAMPUS CONTEXT ---
+  const activeCampus = currentUser?.campus || 'Emerald Campus';
+
   // --- CORE SEARCH & ROUTING STATE ---
   const [searchBy, setSearchBy] = useState('Admission Number');
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,10 +38,12 @@ const PaymentsDesk = () => {
   // --- TRANSACTION CONSOLE STATE ---
   const [fetching, setFetching] = useState(false);
 
-  // 🔄 Global Refresh Engine - Calls endpoint without hardcoded query params so backend falls back to active SystemConfig
+  // 🔄 Global Refresh Engine - Scoped strictly by Campus
   const fetchGlobalMetrics = async () => {
     try {
-      const { data } = await API.get('/finance/dashboard-summary');
+      const { data } = await API.get('/finance/dashboard-summary', {
+        params: { campus: activeCampus }
+      });
       if (data.success) {
         setGlobalMetrics(data.data);
       }
@@ -47,7 +52,7 @@ const PaymentsDesk = () => {
     }
   };
 
-  // 📂 Live Calculation Sheet Pull
+  // 📂 Live Calculation Sheet Pull with Campus Context
   const handleSelectStudent = async (student) => {
     setSelectedStudent(student);
     setSearchQuery('');
@@ -55,7 +60,7 @@ const PaymentsDesk = () => {
     
     try {
       const { data } = await API.get(
-        `/finance/student-ledger/${student._id}?term=${encodeURIComponent(activeTerm)}&session=${encodeURIComponent(activeSession)}`
+        `/finance/student-ledger/${student._id}?term=${encodeURIComponent(activeTerm)}&session=${encodeURIComponent(activeSession)}&campus=${encodeURIComponent(activeCampus)}`
       );
       
       if (data.success && data.data) {
@@ -79,14 +84,14 @@ const PaymentsDesk = () => {
     if (selectedStudent) {
       await handleSelectStudent(selectedStudent);
     }
-  }, [selectedStudent, activeTerm, activeSession]);
+  }, [selectedStudent, activeTerm, activeSession, activeCampus]);
 
   // 🚀 Initial Sync Layout Loop
   useEffect(() => {
     const fetchInitialDirectory = async () => {
       setFetching(true);
       try {
-        // 1. Fetch Active System Configuration first
+        // 1. Fetch Active System Configuration
         try {
           const configRes = await API.get('/system/config');
           if (configRes.data?.data) {
@@ -100,8 +105,10 @@ const PaymentsDesk = () => {
         // 2. Fetch Metrics
         await fetchGlobalMetrics();
 
-        // 3. Fetch Directory
-        const studentsResponse = await API.get('/finance/directory');
+        // 3. Fetch Directory (Campus Isolated)
+        const studentsResponse = await API.get('/finance/directory', {
+          params: { campus: activeCampus }
+        });
         const studentsData = studentsResponse.data;
         
         if (studentsData.success) {
@@ -120,7 +127,7 @@ const PaymentsDesk = () => {
     };
 
     fetchInitialDirectory();
-  }, []);
+  }, [activeCampus]);
 
   // 🔍 Interactive Filter Processing Matrix
   useEffect(() => {
@@ -132,10 +139,11 @@ const PaymentsDesk = () => {
     const matches = students.filter(s => {
       const fieldToSearch = searchBy === 'Admission Number' ? s.admissionNo : s.name;
       const matchesClass = targetClass === 'All' || s.assignedClass === targetClass || s.currentClass === targetClass;
-      return fieldToSearch?.toLowerCase().includes(query) && matchesClass;
+      const matchesCampus = !s.campus || s.campus === activeCampus || activeCampus === 'All Campuses';
+      return fieldToSearch?.toLowerCase().includes(query) && matchesClass && matchesCampus;
     });
     setFilteredStudents(matches);
-  }, [searchQuery, searchBy, targetClass, students]);
+  }, [searchQuery, searchBy, targetClass, students, activeCampus]);
 
   // 🎛️ Open Financial Override Trigger
   const handleOpenAdjustment = (e, student) => {
@@ -161,7 +169,9 @@ const PaymentsDesk = () => {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px', margin: 0 }}>FINANCE COMMAND PORTAL</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>Review student billing profiles, manage term adjustments, and monitor collection progress ({activeSession} - {activeTerm})</p>
+          <p style={{ color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+            Review student billing profiles, manage term adjustments, and monitor collection progress ({activeSession} - {activeTerm}) • <strong style={{ color: 'var(--accent-primary)' }}>{activeCampus}</strong>
+          </p>
         </div>
         {fetching && <div style={{ color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}><Loader2 size={16} className="spin-loader" /> Syncing directory...</div>}
       </header>
