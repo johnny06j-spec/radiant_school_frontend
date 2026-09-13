@@ -29,6 +29,7 @@ const StudentSidebar = ({
     setSwitchingId(siblingId);
     await onSwitchSibling(siblingId);
     setSwitchingId(null);
+    if (isMobile) setIsDrawerOpen(false);
   };
 
   const handleUnlink = async (e, siblingId) => {
@@ -192,7 +193,13 @@ const StudentSidebar = ({
               </div>
             ))}
             
-            <button onClick={onOpenLinkModal} style={styles.addChildBtn}>
+            <button 
+              onClick={() => {
+                onOpenLinkModal();
+                if (isMobile) setIsDrawerOpen(false);
+              }} 
+              style={styles.addChildBtn}
+            >
               <Plus size={13} color="var(--accent-primary)" />
               <span>Link Another Student</span>
             </button>
@@ -207,7 +214,10 @@ const StudentSidebar = ({
           return (
             <button 
               key={item.id}
-              onClick={() => onNavClick(item.id)} 
+              onClick={() => {
+                onNavClick(item.id);
+                if (isMobile) setIsDrawerOpen(false);
+              }} 
               style={{ ...styles.navLink, ...(isActive ? styles.activeNavLink : {}) }}
             >
               <Icon size={16} color={isActive ? '#ffffff' : 'var(--text-secondary)'} /> 

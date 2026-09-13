@@ -17,7 +17,7 @@ import LinkStudentModal from './LinkStudentModal.jsx';
 import MyBiodataSheet from "../views/MyBiodataSheet.jsx";
 import AcademicRecords from "../views/AcademicRecords.jsx";
 import StudentFinance from "../views/student/StudentFinance.jsx"; 
-import Attendance from "../views/Attendance.jsx";
+import StudentAttendance from "../views/StudentAttendance.jsx";
 import SettingsView from "../views/Settings.jsx";
 
 const StudentDashboard = () => {
@@ -41,7 +41,6 @@ const StudentDashboard = () => {
     try {
       setLoading(true);
 
-      // 🟢 1. Fetch system-wide active session & term from system config
       let systemSession = '2026/2027';
       let systemTerm = 'First Term';
 
@@ -57,7 +56,6 @@ const StudentDashboard = () => {
         console.warn("Could not retrieve dynamic system config, using fallbacks:", cfgErr);
       }
 
-      // 🟢 2. Fetch authenticated student profile
       const endpoint = targetStudentId 
         ? `/students/profile/me?studentId=${targetStudentId}` 
         : '/students/profile/me';
@@ -72,7 +70,6 @@ const StudentDashboard = () => {
           setLinkedSiblings(student.linkedSiblings);
         }
 
-        // 🟢 3. Fetch financial ledger using active system term, session, and campus context
         const studentCampus = student.campus || 'Emerald Campus';
         const ledgerRes = await API.get(
           `/finance/student-ledger/${student._id}?term=${encodeURIComponent(systemTerm)}&session=${encodeURIComponent(systemSession)}&campus=${encodeURIComponent(studentCampus)}`
@@ -540,7 +537,7 @@ const StudentDashboard = () => {
         {activeTab === 'biodata' && <MyBiodataSheet studentData={profile} InstitutionLogo={InstitutionLogo} isMobile={isMobile} styles={styles} />}
         {activeTab === 'academics' && <AcademicRecords activeStudent={studentData || profile} />}
         {activeTab === 'payments' && <StudentFinance studentId={activeStudentId || profile.id} />}
-        {activeTab === 'attendance' && <Attendance studentData={profile} />}
+        {activeTab === 'attendance' && <StudentAttendance currentUser={profile} />}
         {activeTab === 'settings' && <SettingsView studentData={profile} />}
       </main>
 
