@@ -4,7 +4,7 @@ import { Menu, Building2 } from 'lucide-react';
 
 import TeacherSidebar from './TeacherSidebar';
 import TeacherOverview from './TeacherOverview';
-import AttendanceModule from './AttendanceModule';
+import TeacherAttendanceDesk from './TeacherAttendanceDesk';
 import ResultEntryModule from './ResultEntryModule';
 import ReadyResultsModule from './ReadyResultsModule';
 
@@ -13,18 +13,28 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('OVERVIEW');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+
     const stored = localStorage.getItem('user');
     if (stored) {
-      setProfile(JSON.parse(stored));
+      try {
+        setProfile(JSON.parse(stored));
+      } catch (err) {
+        console.error("Failed parsing stored user profile:", err);
+      }
     }
     setLoading(false);
+
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleLogout = () => {
     localStorage.clear();
-    window.location.href = '/';
+    window.location.href = '/login';
   };
 
   if (loading) {
@@ -40,9 +50,9 @@ const TeacherDashboard = () => {
   const activeCampus = profile?.campus || 'Emerald Campus';
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#020617', color: '#f8fafc', fontFamily: 'sans-serif', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#020617', color: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif', display: 'flex', width: '100%' }}>
       
-      {/* 1. SIDEBAR (DYNAMICALLY ADAPTS FOR TEACHERS VS EXECUTIVES) */}
+      {/* 1. SIDEBAR */}
       <TeacherSidebar 
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -54,51 +64,69 @@ const TeacherDashboard = () => {
       />
 
       {/* 2. MAIN CONTENT WRAPPER */}
-      <div style={{ flex: 1, paddingLeft: window.innerWidth >= 1024 ? '260px' : '0px', display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
+      <div style={{ 
+        flex: 1, 
+        paddingLeft: isMobile ? '0px' : '260px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        minWidth: 0, 
+        minHeight: '100vh' 
+      }}>
         
         {/* MOBILE TOPBAR */}
-        <header style={{ display: window.innerWidth >= 1024 ? 'none' : 'flex', position: 'sticky', top: 0, zIndex: 30, backgroundColor: 'rgba(15, 23, 42, 0.95)', borderBottom: '1px solid #1e293b', padding: '12px 16px', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button 
-              onClick={() => setMobileOpen(true)}
-              style={{ padding: '8px', borderRadius: '8px', backgroundColor: '#1e293b', color: '#fff', border: 'none', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-            >
-              <Menu size={22} />
-            </button>
-            <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>RADIANT ERP</span>
-          </div>
+        {isMobile && (
+          <header style={{ 
+            position: 'sticky', 
+            top: 0, 
+            zIndex: 300, 
+            backgroundColor: 'rgba(15, 23, 42, 0.95)', 
+            backdropFilter: 'blur(8px)',
+            borderBottom: '1px solid #1e293b', 
+            padding: '12px 16px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justify: 'space-between' 
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button 
+                onClick={() => setMobileOpen(true)}
+                style={{ padding: '8px', borderRadius: '8px', backgroundColor: '#1e293b', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Menu size={20} />
+              </button>
+              <span style={{ fontSize: '14px', fontWeight: '800', color: '#fff' }}>RADIANT ERP</span>
+            </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '4px', backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-              {activeCampus}
-            </span>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '9999px', backgroundColor: isExecutive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(30, 58, 138, 0.6)', color: isExecutive ? '#34d399' : '#93c5fd', border: `1px solid ${isExecutive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}` }}>
-              {profile?.schoolSection} • {roleTitle.toUpperCase()}
-            </span>
-          </div>
-        </header>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '4px', backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                {activeCampus}
+              </span>
+            </div>
+          </header>
+        )}
 
-        {/* WORKSPACE PAGE CONTENT CONTAINER */}
-        <main style={{ flex: 1, padding: '24px', maxWidth: '1280px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+        {/* WORKSPACE PAGE CONTAINER */}
+        <main style={{ flex: 1, padding: isMobile ? '16px' : '24px', maxWidth: '1280px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
           
           {/* DESKTOP PAGE TITLE */}
-          <div style={{ display: window.innerWidth >= 1024 ? 'flex' : 'none', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '16px', marginBottom: '24px' }}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: '#fff' }}>
-                Welcome back, {profile?.firstName ? `${profile.firstName} ${profile.surname}` : profile?.name}
-              </h1>
-              <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
-                {isExecutive ? `${roleTitle} Executive Sign-Off Portal` : 'Faculty Reference ID:'} <span style={{ color: '#fff', fontFamily: 'monospace' }}>{profile?.username || profile?.email}</span>
-              </p>
-            </div>
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '16px', marginBottom: '24px' }}>
+              <div>
+                <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: '#fff' }}>
+                  Welcome back, {profile?.firstName ? `${profile.firstName} ${profile.surname || ''}` : profile?.name || 'Faculty Member'}
+                </h1>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
+                  {isExecutive ? `${roleTitle} Executive Sign-Off Portal` : 'Faculty Reference ID:'} <span style={{ color: '#fff', fontFamily: 'monospace' }}>{profile?.username || profile?.email || 'N/A'}</span>
+                </p>
+              </div>
 
-            {/* 🏫 DESKTOP CAMPUS SCOPE BADGE */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', color: '#60a5fa', padding: '6px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold' }}>
-              <Building2 size={15} /> <span>{activeCampus}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', color: '#60a5fa', padding: '6px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold' }}>
+                <Building2 size={15} /> <span>{activeCampus}</span>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* DYNAMIC TAB COMPONENT SWITCH */}
+          {/* DYNAMIC TAB SWITCH */}
           {activeTab === 'OVERVIEW' && (
             <TeacherOverview profile={profile} isExecutive={isExecutive} onSelectTab={(tab) => setActiveTab(tab)} />
           )}
@@ -108,7 +136,7 @@ const TeacherDashboard = () => {
           )}
 
           {activeTab === 'ATTENDANCE' && !isExecutive && (
-            <AttendanceModule profile={profile} campus={activeCampus} />
+            <TeacherAttendanceDesk profile={profile} campus={activeCampus} />
           )}
 
           {activeTab === 'READY_RESULTS' && (

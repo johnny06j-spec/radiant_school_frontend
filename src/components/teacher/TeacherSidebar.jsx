@@ -10,23 +10,20 @@ import {
   Award,
   GraduationCap,
   ShieldCheck,
-  Building2
+  Building2,
+  Lock
 } from 'lucide-react';
 
 const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, profile, onLogout }) => {
-  // Check if profile is an Executive Role
   const isExecutive = profile?.role === 'headmaster' || profile?.role === 'principal' || profile?.department === 'Executive Administration';
   const roleTitle = profile?.role === 'headmaster' ? 'Headmaster' : (profile?.role === 'principal' ? 'Principal' : 'Teacher');
 
-  // Multi-campus context
   const activeCampus = profile?.campus || 'Emerald Campus';
 
-  // Teacher Class Teacher checks
   const isPrimary = profile?.schoolSection === 'PRIMARY';
-  const isCT = isExecutive ? false : (isPrimary ? true : Boolean(profile?.isClassTeacher));
+  const isCT = isExecutive ? false : (isPrimary ? true : Boolean(profile?.isClassTeacher || profile?.classTeacherOf));
   const ctClass = isPrimary ? (profile?.assignedClass || 'KG 1') : (profile?.classTeacherOf || '');
 
-  // Dynamic Navigation Items based on Executive vs Instructor Roles
   const navItems = isExecutive
     ? [
         { id: 'OVERVIEW', label: 'Executive Dashboard', icon: LayoutDashboard },
@@ -39,8 +36,12 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
         { id: 'READY_RESULTS', label: 'Ready Results', icon: CheckCircle2, isRestricted: !isCT }
       ];
 
-  const handleNavClick = (id) => {
-    setActiveTab(id);
+  const handleNavClick = (item) => {
+    if (item.isRestricted) {
+      alert("Access Restricted: Daily register and broadsheet operations are reserved for Class Teachers.");
+      return;
+    }
+    setActiveTab(item.id);
     setMobileOpen(false);
   };
 
@@ -55,7 +56,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
             inset: 0,
             backgroundColor: 'rgba(2, 6, 23, 0.8)',
             backdropFilter: 'blur(4px)',
-            zIndex: 40
+            zIndex: 400
           }}
         />
       )}
@@ -66,13 +67,13 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
         top: 0,
         bottom: 0,
         left: 0,
-        zIndex: 50,
+        zIndex: 500,
         width: '260px',
         backgroundColor: '#0f172a',
         borderRight: '1px solid #1e293b',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        justify: 'space-between',
         transition: 'transform 0.3s ease-in-out',
         transform: mobileOpen || (window.innerWidth >= 1024) ? 'translateX(0)' : 'translateX(-100%)'
       }}>
@@ -80,23 +81,35 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', borderBottom: '1px solid #1e293b' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: isExecutive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(37, 99, 235, 0.15)', border: `1px solid ${isExecutive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: isExecutive ? '#34d399' : '#60a5fa' }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '10px', 
+                backgroundColor: isExecutive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(37, 99, 235, 0.15)', 
+                border: `1px solid ${isExecutive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'}`, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justify: 'center', 
+                color: isExecutive ? '#34d399' : '#60a5fa' 
+              }}>
                 <GraduationCap size={22} />
               </div>
               <div>
-                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#fff', letterSpacing: '0.5px' }}>RADIANT ERP</h2>
+                <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#fff', letterSpacing: '0.5px' }}>RADIANT ERP</h2>
                 <p style={{ margin: 0, fontSize: '11px', fontWeight: '600', color: isExecutive ? '#34d399' : '#94a3b8' }}>
                   {isExecutive ? `${roleTitle} Workspace` : 'Faculty Workspace'}
                 </p>
               </div>
             </div>
 
-            <button 
-              onClick={() => setMobileOpen(false)} 
-              style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
-            >
-              <X size={20} />
-            </button>
+            {window.innerWidth < 1024 && (
+              <button 
+                onClick={() => setMobileOpen(false)} 
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            )}
           </div>
 
           {/* 🏫 CAMPUS BADGE */}
@@ -105,7 +118,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
             <span style={{ fontSize: '11px', fontWeight: '700', color: '#60a5fa' }}>{activeCampus}</span>
           </div>
 
-          {/* EXECUTIVE BADGE */}
+          {/* ROLE OVERLAY BADGE */}
           {isExecutive ? (
             <div style={{ margin: '12px 16px 8px 16px', padding: '12px', borderRadius: '10px', backgroundColor: 'rgba(6, 78, 59, 0.4)', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'rgba(4, 120, 87, 0.6)', color: '#6ee7b7' }}>
@@ -117,7 +130,6 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
               </div>
             </div>
           ) : isCT && (
-            /* CLASS TEACHER BADGE */
             <div style={{ margin: '12px 16px 8px 16px', padding: '12px', borderRadius: '10px', backgroundColor: 'rgba(58, 7, 100, 0.4)', border: '1px solid rgba(168, 85, 247, 0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'rgba(88, 28, 135, 0.6)', color: '#d8b4fe' }}>
                 <Award size={18} />
@@ -138,7 +150,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleNavClick(item.id)}
+                  onClick={() => handleNavClick(item)}
                   style={{
                     width: '100%',
                     minHeight: '44px',
@@ -146,27 +158,26 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
                     borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    justify: 'space-between',
                     gap: '12px',
                     fontSize: '13px',
                     fontWeight: 'bold',
-                    cursor: 'pointer',
+                    cursor: item.isRestricted ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s',
                     backgroundColor: isActive ? (isExecutive ? '#059669' : '#2563eb') : 'transparent',
-                    color: isActive ? '#fff' : '#94a3b8',
+                    color: isActive ? '#fff' : item.isRestricted ? '#475569' : '#94a3b8',
                     border: 'none',
+                    opacity: item.isRestricted ? 0.6 : 1,
                     boxShadow: isActive ? `0 10px 15px -3px ${isExecutive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(37, 99, 235, 0.3)'}` : 'none'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Icon size={18} style={{ color: isActive ? '#fff' : '#64748b' }} />
+                    <Icon size={18} style={{ color: isActive ? '#fff' : item.isRestricted ? '#475569' : '#64748b' }} />
                     <span>{item.label}</span>
                   </div>
 
                   {item.isRestricted && (
-                    <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#1e293b', color: '#64748b', fontFamily: 'monospace' }}>
-                      Class Only
-                    </span>
+                    <Lock size={12} color="#64748b" />
                   )}
                 </button>
               );
@@ -178,10 +189,10 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
         <div style={{ padding: '16px', borderTop: '1px solid #1e293b', backgroundColor: '#020617' }}>
           <div style={{ marginBottom: '12px' }}>
             <p style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {profile?.name || `${profile?.firstName} ${profile?.surname}`}
+              {profile?.name || `${profile?.firstName || ''} ${profile?.surname || ''}`.trim() || 'Faculty Member'}
             </p>
             <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {profile?.username || profile?.email}
+              {profile?.username || profile?.email || 'N/A'}
             </p>
           </div>
 
@@ -200,7 +211,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justify: 'center',
               gap: '8px'
             }}
           >
