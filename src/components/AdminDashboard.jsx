@@ -40,8 +40,9 @@ const AdminDashboard = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   
-  // 🏫 Multi-Campus Global Switcher State ('All Campuses', 'Emerald Campus', 'Great Campus')
-  const [selectedCampus, setSelectedCampus] = useState('All Campuses');
+  // 🏫 Multi-Campus Global Switcher State
+  const [selectedCampus, setSelectedCampus] = useState('Emerald Campus');
+  const [rawUser, setRawUser] = useState(null);
 
   // Statistics State Engine
   const [stats, setStats] = useState({
@@ -60,12 +61,22 @@ const AdminDashboard = () => {
       return;
     }
 
+    try {
+      const parsedUser = JSON.parse(savedUser);
+      setRawUser(parsedUser);
+      if (parsedUser?.campus) {
+        setSelectedCampus(parsedUser.campus);
+      }
+    } catch (e) {
+      console.error("Failed parsing stored user session:", e);
+    }
+
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch campus-aware dashboard stats when campus or tab changes
+  // Fetch campus-aware dashboard stats when campus changes
   useEffect(() => {
     const fetchDashboardStats = async () => {
       setLoading(true);
@@ -89,6 +100,12 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/';
+  };
+
+  // Dynamically constructed user payload synced with sidebar campus selection
+  const currentUser = {
+    ...rawUser,
+    campus: selectedCampus
   };
 
   const menuItems = [
@@ -184,7 +201,7 @@ const AdminDashboard = () => {
             borderRight: '1px solid var(--border-color)', 
             display: 'flex', 
             flexDirection: 'column', 
-            justifyContent: 'space-between', 
+            justify: 'space-between', 
             height: '100%', 
             boxSizing: 'border-box',
             flexShrink: 0,
@@ -289,7 +306,7 @@ const AdminDashboard = () => {
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
+              justify: 'space-between',
             }}>
               <div>
                 <div style={{ marginBottom: '1.25rem' }}>
@@ -488,7 +505,7 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'payments' && (
-            <PaymentsDesk selectedCampus={selectedCampus} />
+            <PaymentsDesk currentUser={currentUser} selectedCampus={selectedCampus} />
           )}
 
           {activeTab === 'settings' && (
@@ -500,7 +517,7 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'release-results' && (
-            <AdminReleaseDesk selectedCampus={selectedCampus} />
+            <AdminReleaseDesk currentUser={currentUser} selectedCampus={selectedCampus} />
           )}
 
         </div>
