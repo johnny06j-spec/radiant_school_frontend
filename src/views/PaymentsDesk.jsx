@@ -4,9 +4,9 @@ import { Search, Users, AlertTriangle, FileText, Loader2, SlidersHorizontal } fr
 import API from '../api/axiosInstance';
 import AdjustmentModal from '../components/admin/AdjustmentModal';
 
-const PaymentsDesk = ({ currentUser }) => {
-  // --- CAMPUS CONTEXT ---
-  const activeCampus = currentUser?.campus || 'Emerald Campus';
+const PaymentsDesk = ({ currentUser, selectedCampus }) => {
+  // 🔒 Dynamic Campus: Evaluates selectedCampus state from top-level layout first
+  const activeCampus = selectedCampus || currentUser?.campus || 'Emerald Campus';
 
   // --- CORE SEARCH & ROUTING STATE ---
   const [searchBy, setSearchBy] = useState('Admission Number');
@@ -25,7 +25,7 @@ const PaymentsDesk = ({ currentUser }) => {
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
   const [selectedStudentForAdjustment, setSelectedStudentForAdjustment] = useState(null);
   
-  // --- FINANCIAL STATS STACKS (DRIVEN BY BACKEND) ---
+  // --- FINANCIAL STATS STACKS ---
   const [globalMetrics, setGlobalMetrics] = useState({ grossExpectedRevenue: 0, totalNetCollected: 0, totalSystemArrears: 0 });
   const [itemizedFees, setItemizedFees] = useState([]);
   const [studentLedgerData, setStudentLedgerData] = useState({
@@ -35,11 +35,10 @@ const PaymentsDesk = ({ currentUser }) => {
     totalOutstanding: 0
   });
   
-  // --- TRANSACTION CONSOLE STATE ---
   const [fetching, setFetching] = useState(false);
 
-  // 🔄 Global Refresh Engine - Scoped strictly by Campus
-  const fetchGlobalMetrics = async () => {
+  // 🔄 Global Refresh Engine - Re-fetches whenever activeCampus changes
+  const fetchGlobalMetrics = useCallback(async () => {
     try {
       const { data } = await API.get('/finance/dashboard-summary', {
         params: { campus: activeCampus }
@@ -50,9 +49,9 @@ const PaymentsDesk = ({ currentUser }) => {
     } catch (err) {
       console.error("Failed to sync global financial data framework:", err);
     }
-  };
+  }, [activeCampus]);
 
-  // 📂 Live Calculation Sheet Pull with Campus Context
+  // 📂 Pull Live Student Ledger
   const handleSelectStudent = async (student) => {
     setSelectedStudent(student);
     setSearchQuery('');
@@ -78,34 +77,27 @@ const PaymentsDesk = ({ currentUser }) => {
     }
   };
 
-  // 🔄 Master Interface Recalculation Chain Trigger
   const triggerMasterDataRefresh = useCallback(async () => {
     await fetchGlobalMetrics();
     if (selectedStudent) {
       await handleSelectStudent(selectedStudent);
     }
-  }, [selectedStudent, activeTerm, activeSession, activeCampus]);
+  }, [fetchGlobalMetrics, selectedStudent, activeTerm, activeSession, activeCampus]);
 
-  // 🚀 Initial Sync Layout Loop
+  // 🚀 Re-run directory & metrics sync whenever activeCampus updates
   useEffect(() => {
     const fetchInitialDirectory = async () => {
       setFetching(true);
+      setSelectedStudent(null);
       try {
-        // 1. Fetch Active System Configuration
-        try {
-          const configRes = await API.get('/system/config');
-          if (configRes.data?.data) {
-            if (configRes.data.data.currentSession) setActiveSession(configRes.data.data.currentSession);
-            if (configRes.data.data.currentTerm) setActiveTerm(configRes.data.data.currentTerm);
-          }
-        } catch (configErr) {
-          console.warn("System config pre-fetch fallback:", configErr);
+        const configRes = await API.get('/system/config');
+        if (configRes.data?.data) {
+          if (configRes.data.data.currentSession) setActiveSession(configRes.data.data.currentSession);
+          if (configRes.data.data.currentTerm) setActiveTerm(configRes.data.data.currentTerm);
         }
 
-        // 2. Fetch Metrics
         await fetchGlobalMetrics();
 
-        // 3. Fetch Directory (Campus Isolated)
         const studentsResponse = await API.get('/finance/directory', {
           params: { campus: activeCampus }
         });
@@ -127,7 +119,7 @@ const PaymentsDesk = ({ currentUser }) => {
     };
 
     fetchInitialDirectory();
-  }, [activeCampus]);
+  }, [activeCampus, fetchGlobalMetrics]);
 
   // 🔍 Interactive Filter Processing Matrix
   useEffect(() => {
@@ -145,14 +137,12 @@ const PaymentsDesk = ({ currentUser }) => {
     setFilteredStudents(matches);
   }, [searchQuery, searchBy, targetClass, students, activeCampus]);
 
-  // 🎛️ Open Financial Override Trigger
   const handleOpenAdjustment = (e, student) => {
     e.stopPropagation();
     setSelectedStudentForAdjustment(student);
     setIsAdjustmentOpen(true);
   };
 
-  // 🧮 Live Client State View Projections
   const totalBill = studentLedgerData.currentTermFee + studentLedgerData.previousOutstanding;
   const totalPaid = studentLedgerData.totalPaid;
   const outstandingBalance = studentLedgerData.totalOutstanding;
@@ -170,7 +160,7 @@ const PaymentsDesk = ({ currentUser }) => {
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px', margin: 0 }}>FINANCE COMMAND PORTAL</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-            Review student billing profiles, manage term adjustments, and monitor collection progress ({activeSession} - {activeTerm}) • <strong style={{ color: 'var(--accent-primary)' }}>{activeCampus}</strong>
+            Review student billing profiles, manage term adjustments, and monitor collection progress ({activeSession} - {activeTerm}) • <strong style={{ color: '#38bdf8' }}>{activeCampus}</strong>
           </p>
         </div>
         {fetching && <div style={{ color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}><Loader2 size={16} className="spin-loader" /> Syncing directory...</div>}
