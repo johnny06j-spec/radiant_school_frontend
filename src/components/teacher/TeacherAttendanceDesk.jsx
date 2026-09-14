@@ -21,6 +21,40 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   const [isNotClassTeacher, setIsNotClassTeacher] = useState(false);
   const [showBroadsheet, setShowBroadsheet] = useState(false);
 
+  // Helper function to derive Monday and Friday from any date
+  const getWeekBounds = (dateStr) => {
+    const d = new Date(dateStr);
+    const day = d.getDay();
+    const diffToMon = d.getDate() - day + (day === 0 ? -6 : 1);
+    
+    const monday = new Date(d.setDate(diffToMon));
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+
+    const formatShort = (dt) => `${dt.getDate()} ${dt.toLocaleString('en-US', { month: 'short' })}`;
+    const formatFull = (dt) => `${dt.getDate()} ${dt.toLocaleString('en-US', { month: 'short' })} ${dt.getFullYear()}`;
+
+    // Generate individual day labels for table headers (MON 14/09, TUE 15/09, etc.)
+    const weekDays = [0, 1, 2, 3, 4].map(i => {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + i);
+      const name = ['MON', 'TUE', 'WED', 'THU', 'FRI'][i];
+      const dd = String(dayDate.getDate()).padStart(2, '0');
+      const mm = String(dayDate.getMonth() + 1).padStart(2, '0');
+      return { label: `${name} ${dd}/${mm}`, fullDate: dayDate };
+    });
+
+    return {
+      monday,
+      friday,
+      rangeString: `${formatFull(monday)} - ${formatFull(friday)}`,
+      shortRange: `${formatShort(monday)} - ${formatShort(friday)} ${monday.getFullYear()}`,
+      weekDays
+    };
+  };
+
+  const currentWeek = getWeekBounds(attendanceDate);
+
   // Sync className when currentUser prop resolves/updates
   useEffect(() => {
     if (currentUser) {
@@ -74,7 +108,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   };
 
   const handleSaveAttendance = async () => {
-    // 🔑 Validate that no student is left Unmarked
+    // Validate that no student is left Unmarked
     const unmarked = students.filter(s => !s.status);
     if (unmarked.length > 0) {
       alert(`Please select a status for all students. ${unmarked.length} student(s) currently unmarked.`);
@@ -347,7 +381,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
             </div>
             <div>
               <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>WEEK RANGE</label>
-              <input type="text" value="7 Sep - 11 Sep 2026" readOnly style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px' }} />
+              <input type="text" value={currentWeek.shortRange} readOnly style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px', fontWeight: 'bold' }} />
             </div>
             <button 
               onClick={() => setShowBroadsheet(true)}
@@ -370,7 +404,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
             </thead>
             <tbody>
               <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                <td style={{ padding: '12px 10px', fontWeight: 'bold' }}>7 Sep - 11 Sep 2026</td>
+                <td style={{ padding: '12px 10px', fontWeight: 'bold' }}>{currentWeek.shortRange}</td>
                 <td style={{ padding: '12px 10px' }}>{className}</td>
                 <td style={{ padding: '12px 10px', color: '#38bdf8' }}>{sessionPeriod}</td>
                 <td style={{ padding: '12px 10px', color: '#94a3b8' }}>14 Sep 2026, 02:26 PM</td>
@@ -401,7 +435,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
               <div>
                 <div>Class: {className}</div>
                 <div>Class Teacher: {currentUser?.firstName ? `${currentUser.firstName} ${currentUser.surname || ''}` : currentUser?.name || 'Mr. Adeboye'}</div>
-                <div>Week: 7 Sep - 11 Sep 2026</div>
+                <div>Week: {currentWeek.rangeString}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div>Term: First Term</div>
@@ -416,11 +450,9 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                   <th style={{ border: '1px solid #000', padding: '6px' }}>S/N</th>
                   <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>STUDENT NAME</th>
                   <th style={{ border: '1px solid #000', padding: '6px' }}>REG. NO</th>
-                  <th style={{ border: '1px solid #000', padding: '6px' }}>MON 7/09</th>
-                  <th style={{ border: '1px solid #000', padding: '6px' }}>TUE 8/09</th>
-                  <th style={{ border: '1px solid #000', padding: '6px' }}>WED 9/09</th>
-                  <th style={{ border: '1px solid #000', padding: '6px' }}>THU 10/09</th>
-                  <th style={{ border: '1px solid #000', padding: '6px' }}>FRI 11/09</th>
+                  {currentWeek.weekDays.map((wd, i) => (
+                    <th key={i} style={{ border: '1px solid #000', padding: '6px' }}>{wd.label}</th>
+                  ))}
                   <th style={{ border: '1px solid #000', padding: '6px' }}>TOTAL PRESENT</th>
                   <th style={{ border: '1px solid #000', padding: '6px' }}>TOTAL ABSENT</th>
                   <th style={{ border: '1px solid #000', padding: '6px' }}>ATTENDANCE %</th>
@@ -433,11 +465,11 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                     <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', fontWeight: 'bold' }}>{st.name}</td>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>{st.admissionNo}</td>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>{st.status === 'Present' ? 'P' : st.status === 'Late' ? 'L' : st.status === 'Absent' ? 'A' : st.status === 'Excused' ? 'E' : '-'}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>P</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>P</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>P</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>P</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>5</td>
+                    <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
+                    <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
+                    <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
+                    <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
+                    <td style={{ border: '1px solid #000', padding: '6px' }}>1</td>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>0</td>
                     <td style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>100%</td>
                   </tr>
