@@ -13,10 +13,16 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   const userAssignedClass = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0] || 'KG 1';
   const [className, setClassName] = useState(userAssignedClass);
   const [sessionPeriod, setSessionPeriod] = useState('Morning');
+  
+  // Separate date states for taking attendance vs generating reports
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
   
   const [students, setStudents] = useState([]);
   const [weeklyReport, setWeeklyReport] = useState([]);
+  const [recentReportsList, setRecentReportsList] = useState([]);
+  const [activeReportWeek, setActiveReportWeek] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isNotClassTeacher, setIsNotClassTeacher] = useState(false);
@@ -55,7 +61,8 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     };
   };
 
-  const currentWeek = getWeekBounds(attendanceDate);
+  const currentTakeWeek = getWeekBounds(attendanceDate);
+  const currentReportWeek = getWeekBounds(reportDate);
 
   // Sync className when currentUser prop resolves/updates
   useEffect(() => {
@@ -87,17 +94,19 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     }
   };
 
-  const fetchWeeklyReport = async () => {
+  const fetchWeeklyReport = async (targetWeekBounds) => {
     if (!className) return;
     try {
       setLoading(true);
-      const startDate = currentWeek.monday.toISOString().split('T')[0];
-      const endDate = currentWeek.friday.toISOString().split('T')[0];
+      const bounds = targetWeekBounds || currentReportWeek;
+      const startDate = bounds.monday.toISOString().split('T')[0];
+      const endDate = bounds.friday.toISOString().split('T')[0];
 
       const res = await axiosInstance.get('/attendance/weekly-report', {
         params: { className, startDate, endDate, sessionPeriod }
       });
       setWeeklyReport(res.data?.data || []);
+      setActiveReportWeek(bounds);
     } catch (err) {
       console.error('Failed fetching weekly report data', err);
     } finally {
@@ -111,8 +120,29 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     }
   }, [className, attendanceDate, sessionPeriod, activeTab]);
 
-  const handleOpenBroadsheet = () => {
-    fetchWeeklyReport();
+  const handleGenerateReport = async () => {
+    await fetchWeeklyReport(currentReportWeek);
+    
+    // Add report to history list if unique
+    const newEntry = {
+      id: `${currentReportWeek.shortRange}-${sessionPeriod}-${className}`,
+      dateRange: currentReportWeek.shortRange,
+      className,
+      sessionPeriod,
+      generatedOn: new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+      bounds: currentReportWeek
+    };
+
+    setRecentReportsList(prev => {
+      const exists = prev.some(r => r.id === newEntry.id);
+      return exists ? prev : [newEntry, ...prev];
+    });
+
+    setShowBroadsheet(true);
+  };
+
+  const handleOpenSavedReport = async (reportItem) => {
+    await fetchWeeklyReport(reportItem.bounds);
     setShowBroadsheet(true);
   };
 
@@ -215,6 +245,8 @@ export default function TeacherAttendanceDesk({ currentUser }) {
       </div>
     );
   }
+
+  const activeWeekBounds = activeReportWeek || currentReportWeek;
 
   return (
     <div style={{ padding: '20px', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
@@ -400,7 +432,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
       ) : (
         /* REPORTS TAB */
         <div style={{ background: '#0f172a', padding: '20px', borderRadius: '12px', border: '1px solid #1e293b' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '16px', alignItems: 'end', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '16px', alignItems: 'end', marginBottom: '24px' }}>
             <div>
               <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>CLASS</label>
               <select value={className} onChange={e => setClassName(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px' }}>
@@ -415,11 +447,20 @@ export default function TeacherAttendanceDesk({ currentUser }) {
               </select>
             </div>
             <div>
+              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>SELECT DATE</label>
+              <input 
+                type="date" 
+                value={reportDate} 
+                onChange={e => setReportDate(e.target.value)} 
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px', fontWeight: 'bold' }} 
+              />
+            </div>
+            <div>
               <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>WEEK RANGE</label>
-              <input type="text" value={currentWeek.shortRange} readOnly style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px', fontWeight: 'bold' }} />
+              <input type="text" value={currentReportWeek.shortRange} readOnly style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px', fontWeight: 'bold', opacity: 0.8 }} />
             </div>
             <button 
-              onClick={handleOpenBroadsheet}
+              onClick={handleGenerateReport} 
               style={{ background: '#2563eb', border: 'none', color: '#fff', padding: '9px 18px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <FileSpreadsheet size={16} /> Generate Report
@@ -438,16 +479,31 @@ export default function TeacherAttendanceDesk({ currentUser }) {
               </tr>
             </thead>
             <tbody>
-              <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                <td style={{ padding: '12px 10px', fontWeight: 'bold' }}>{currentWeek.shortRange}</td>
-                <td style={{ padding: '12px 10px' }}>{className}</td>
-                <td style={{ padding: '12px 10px', color: '#38bdf8' }}>{sessionPeriod}</td>
-                <td style={{ padding: '12px 10px', color: '#94a3b8' }}>14 Sep 2026, 02:26 PM</td>
-                <td style={{ padding: '12px 10px', textAlign: 'right' }}>
-                  <button onClick={handleOpenBroadsheet} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginRight: '6px' }}>Download</button>
-                  <button onClick={handleOpenBroadsheet} style={{ background: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={12} /></button>
-                </td>
-              </tr>
+              {recentReportsList.length === 0 ? (
+                <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                  <td style={{ padding: '12px 10px', fontWeight: 'bold' }}>{currentReportWeek.shortRange}</td>
+                  <td style={{ padding: '12px 10px' }}>{className}</td>
+                  <td style={{ padding: '12px 10px', color: '#38bdf8' }}>{sessionPeriod}</td>
+                  <td style={{ padding: '12px 10px', color: '#94a3b8' }}>Current Selected Week</td>
+                  <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                    <button onClick={handleGenerateReport} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginRight: '6px' }}>Download</button>
+                    <button onClick={handleGenerateReport} style={{ background: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={12} /></button>
+                  </td>
+                </tr>
+              ) : (
+                recentReportsList.map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                    <td style={{ padding: '12px 10px', fontWeight: 'bold' }}>{item.dateRange}</td>
+                    <td style={{ padding: '12px 10px' }}>{item.className}</td>
+                    <td style={{ padding: '12px 10px', color: '#38bdf8' }}>{item.sessionPeriod}</td>
+                    <td style={{ padding: '12px 10px', color: '#94a3b8' }}>{item.generatedOn}</td>
+                    <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                      <button onClick={() => handleOpenSavedReport(item)} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginRight: '6px' }}>Download</button>
+                      <button onClick={() => handleOpenSavedReport(item)} style={{ background: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={12} /></button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -470,7 +526,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
               <div>
                 <div>Class: {className}</div>
                 <div>Class Teacher: {currentUser?.firstName ? `${currentUser.firstName} ${currentUser.surname || ''}` : currentUser?.name || 'Mr. Adeboye'}</div>
-                <div>Week: {currentWeek.rangeString}</div>
+                <div>Week: {activeWeekBounds.rangeString}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div>Term: First Term</div>
@@ -485,7 +541,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                   <th style={{ border: '1px solid #000', padding: '6px' }}>S/N</th>
                   <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>STUDENT NAME</th>
                   <th style={{ border: '1px solid #000', padding: '6px' }}>REG. NO</th>
-                  {currentWeek.weekDays.map((wd, i) => (
+                  {activeWeekBounds.weekDays.map((wd, i) => (
                     <th key={i} style={{ border: '1px solid #000', padding: '6px' }}>{wd.label}</th>
                   ))}
                   <th style={{ border: '1px solid #000', padding: '6px' }}>TOTAL PRESENT</th>
@@ -501,8 +557,8 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                     <td style={{ border: '1px solid #000', padding: '6px' }}>{st.admissionNo}</td>
                     
                     {/* Dynamic columns for Monday through Friday */}
-                    {currentWeek.weekDays.map((wd, idx) => {
-                      const dayStatus = st.logsByDate ? st.logsByDate[wd.isoDate] : (wd.isoDate === attendanceDate ? st.status : '');
+                    {activeWeekBounds.weekDays.map((wd, idx) => {
+                      const dayStatus = st.logsByDate ? st.logsByDate[wd.isoDate] : '';
                       return (
                         <td key={idx} style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>
                           {getStatusSymbol(dayStatus)}
