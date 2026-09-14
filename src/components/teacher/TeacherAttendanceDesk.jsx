@@ -8,7 +8,10 @@ import axiosInstance from '../../api/axiosInstance';
 
 export default function TeacherAttendanceDesk({ currentUser }) {
   const [activeTab, setActiveTab] = useState('take-attendance');
-  const [className, setClassName] = useState(currentUser?.assignedClass || currentUser?.classTeacherOf || 'JSS 1');
+  
+  // Resolve assigned class dynamically
+  const userAssignedClass = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0] || 'KG 1';
+  const [className, setClassName] = useState(userAssignedClass);
   const [sessionPeriod, setSessionPeriod] = useState('Morning');
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   
@@ -16,10 +19,20 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isNotClassTeacher, setIsNotClassTeacher] = useState(false);
-
   const [showBroadsheet, setShowBroadsheet] = useState(false);
 
+  // Sync className when currentUser prop updates/loads
+  useEffect(() => {
+    if (currentUser) {
+      const assigned = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0];
+      if (assigned) {
+        setClassName(assigned);
+      }
+    }
+  }, [currentUser]);
+
   const fetchAttendanceSheet = async () => {
+    if (!className) return;
     try {
       setLoading(true);
       setIsNotClassTeacher(false);
@@ -39,7 +52,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   };
 
   useEffect(() => {
-    if (activeTab === 'take-attendance') {
+    if (activeTab === 'take-attendance' && className) {
       fetchAttendanceSheet();
     }
   }, [className, attendanceDate, sessionPeriod, activeTab]);

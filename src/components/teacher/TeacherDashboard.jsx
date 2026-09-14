@@ -136,7 +136,7 @@ const TeacherDashboard = () => {
           )}
 
           {activeTab === 'ATTENDANCE' && !isExecutive && (
-            <TeacherAttendanceDesk profile={profile} campus={activeCampus} />
+            <TeacherAttendanceDesk currentUser={profile} campus={activeCampus} />
           )}
 
           {activeTab === 'READY_RESULTS' && (
