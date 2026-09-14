@@ -16,12 +16,13 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   
   const [students, setStudents] = useState([]);
+  const [weeklyReport, setWeeklyReport] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isNotClassTeacher, setIsNotClassTeacher] = useState(false);
   const [showBroadsheet, setShowBroadsheet] = useState(false);
 
-  // Helper function to derive Monday and Friday from any date
+  // Helper function to derive Monday and Friday bounds + 5 daily ISO dates
   const getWeekBounds = (dateStr) => {
     const d = new Date(dateStr);
     const day = d.getDay();
@@ -34,14 +35,15 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     const formatShort = (dt) => `${dt.getDate()} ${dt.toLocaleString('en-US', { month: 'short' })}`;
     const formatFull = (dt) => `${dt.getDate()} ${dt.toLocaleString('en-US', { month: 'short' })} ${dt.getFullYear()}`;
 
-    // Generate individual day labels for table headers (MON 14/09, TUE 15/09, etc.)
+    // Generate individual day labels & ISO dates (MON 14/09, TUE 15/09, etc.)
     const weekDays = [0, 1, 2, 3, 4].map(i => {
       const dayDate = new Date(monday);
       dayDate.setDate(monday.getDate() + i);
       const name = ['MON', 'TUE', 'WED', 'THU', 'FRI'][i];
       const dd = String(dayDate.getDate()).padStart(2, '0');
       const mm = String(dayDate.getMonth() + 1).padStart(2, '0');
-      return { label: `${name} ${dd}/${mm}`, fullDate: dayDate };
+      const isoDate = dayDate.toISOString().split('T')[0];
+      return { label: `${name} ${dd}/${mm}`, isoDate };
     });
 
     return {
@@ -85,11 +87,34 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     }
   };
 
+  const fetchWeeklyReport = async () => {
+    if (!className) return;
+    try {
+      setLoading(true);
+      const startDate = currentWeek.monday.toISOString().split('T')[0];
+      const endDate = currentWeek.friday.toISOString().split('T')[0];
+
+      const res = await axiosInstance.get('/attendance/weekly-report', {
+        params: { className, startDate, endDate, sessionPeriod }
+      });
+      setWeeklyReport(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed fetching weekly report data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'take-attendance' && className) {
       fetchAttendanceSheet();
     }
   }, [className, attendanceDate, sessionPeriod, activeTab]);
+
+  const handleOpenBroadsheet = () => {
+    fetchWeeklyReport();
+    setShowBroadsheet(true);
+  };
 
   const handleStatusChange = (index, status) => {
     const updated = [...students];
@@ -108,7 +133,6 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   };
 
   const handleSaveAttendance = async () => {
-    // Validate that no student is left Unmarked
     const unmarked = students.filter(s => !s.status);
     if (unmarked.length > 0) {
       alert(`Please select a status for all students. ${unmarked.length} student(s) currently unmarked.`);
@@ -126,10 +150,21 @@ export default function TeacherAttendanceDesk({ currentUser }) {
         records: students
       });
       alert('Attendance recorded successfully!');
+      fetchAttendanceSheet();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed saving attendance.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const getStatusSymbol = (status) => {
+    switch (status) {
+      case 'Present': return 'P';
+      case 'Late': return 'L';
+      case 'Absent': return 'A';
+      case 'Excused': return 'E';
+      default: return '-';
     }
   };
 
@@ -384,7 +419,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
               <input type="text" value={currentWeek.shortRange} readOnly style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px', fontWeight: 'bold' }} />
             </div>
             <button 
-              onClick={() => setShowBroadsheet(true)}
+              onClick={handleOpenBroadsheet}
               style={{ background: '#2563eb', border: 'none', color: '#fff', padding: '9px 18px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <FileSpreadsheet size={16} /> Generate Report
@@ -409,8 +444,8 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                 <td style={{ padding: '12px 10px', color: '#38bdf8' }}>{sessionPeriod}</td>
                 <td style={{ padding: '12px 10px', color: '#94a3b8' }}>14 Sep 2026, 02:26 PM</td>
                 <td style={{ padding: '12px 10px', textAlign: 'right' }}>
-                  <button onClick={() => setShowBroadsheet(true)} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginRight: '6px' }}>Download</button>
-                  <button onClick={() => setShowBroadsheet(true)} style={{ background: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={12} /></button>
+                  <button onClick={handleOpenBroadsheet} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginRight: '6px' }}>Download</button>
+                  <button onClick={handleOpenBroadsheet} style={{ background: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={12} /></button>
                 </td>
               </tr>
             </tbody>
@@ -459,19 +494,25 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                 </tr>
               </thead>
               <tbody style={{ textAlign: 'center' }}>
-                {students.map((st, i) => (
-                  <tr key={st.studentId}>
+                {(weeklyReport.length > 0 ? weeklyReport : students).map((st, i) => (
+                  <tr key={st.studentId || i}>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>{i + 1}</td>
                     <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', fontWeight: 'bold' }}>{st.name}</td>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>{st.admissionNo}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>{st.status === 'Present' ? 'P' : st.status === 'Late' ? 'L' : st.status === 'Absent' ? 'A' : st.status === 'Excused' ? 'E' : '-'}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>1</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>0</td>
-                    <td style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>100%</td>
+                    
+                    {/* Dynamic columns for Monday through Friday */}
+                    {currentWeek.weekDays.map((wd, idx) => {
+                      const dayStatus = st.logsByDate ? st.logsByDate[wd.isoDate] : (wd.isoDate === attendanceDate ? st.status : '');
+                      return (
+                        <td key={idx} style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>
+                          {getStatusSymbol(dayStatus)}
+                        </td>
+                      );
+                    })}
+
+                    <td style={{ border: '1px solid #000', padding: '6px' }}>{st.present ?? (st.status === 'Present' ? 1 : 0)}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px' }}>{st.absent ?? (st.status === 'Absent' ? 1 : 0)}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>{st.attendancePercentage ?? 100}%</td>
                   </tr>
                 ))}
               </tbody>
