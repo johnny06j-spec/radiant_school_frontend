@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle, Clock, XCircle, FileText, Save, 
-  Eye, FileSpreadsheet, CheckCheck, Lock, UserCheck 
+  Eye, FileSpreadsheet, CheckCheck, Lock, UserCheck, AlertCircle 
 } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
 
 export default function TeacherAttendanceDesk({ currentUser }) {
   const [activeTab, setActiveTab] = useState('take-attendance');
   
-  // Resolve assigned class dynamically
+  // Dynamic assigned class resolution
   const userAssignedClass = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0] || 'KG 1';
   const [className, setClassName] = useState(userAssignedClass);
   const [sessionPeriod, setSessionPeriod] = useState('Morning');
@@ -21,7 +21,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   const [isNotClassTeacher, setIsNotClassTeacher] = useState(false);
   const [showBroadsheet, setShowBroadsheet] = useState(false);
 
-  // Sync className when currentUser prop updates/loads
+  // Sync className when currentUser prop resolves/updates
   useEffect(() => {
     if (currentUser) {
       const assigned = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0];
@@ -74,6 +74,13 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   };
 
   const handleSaveAttendance = async () => {
+    // 🔑 Validate that no student is left Unmarked
+    const unmarked = students.filter(s => !s.status);
+    if (unmarked.length > 0) {
+      alert(`Please select a status for all students. ${unmarked.length} student(s) currently unmarked.`);
+      return;
+    }
+
     try {
       setSaving(true);
       await axiosInstance.post('/attendance/save', {
@@ -97,6 +104,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     late: students.filter(s => s.status === 'Late').length,
     absent: students.filter(s => s.status === 'Absent').length,
     excused: students.filter(s => s.status === 'Excused').length,
+    unmarked: students.filter(s => !s.status).length
   };
 
   // 🔒 RESTRICTED LOCK VIEW FOR UNASSIGNED TEACHERS
@@ -204,36 +212,44 @@ export default function TeacherAttendanceDesk({ currentUser }) {
           </div>
 
           {/* COUNTER CARDS */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ background: '#052e16', border: '1px solid #15803d', padding: '16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <CheckCircle size={28} color="#22c55e" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ background: '#052e16', border: '1px solid #15803d', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <CheckCircle size={24} color="#22c55e" />
               <div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: '#22c55e' }}>{metrics.present}</div>
-                <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#86efac', textTransform: 'uppercase' }}>Present</div>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: '#22c55e' }}>{metrics.present}</div>
+                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#86efac', textTransform: 'uppercase' }}>Present</div>
               </div>
             </div>
 
-            <div style={{ background: '#451a03', border: '1px solid #b45309', padding: '16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <Clock size={28} color="#f59e0b" />
+            <div style={{ background: '#451a03', border: '1px solid #b45309', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Clock size={24} color="#f59e0b" />
               <div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: '#f59e0b' }}>{metrics.late}</div>
-                <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#fde68a', textTransform: 'uppercase' }}>Late</div>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: '#f59e0b' }}>{metrics.late}</div>
+                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#fde68a', textTransform: 'uppercase' }}>Late</div>
               </div>
             </div>
 
-            <div style={{ background: '#450a0a', border: '1px solid #b91c1c', padding: '16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <XCircle size={28} color="#ef4444" />
+            <div style={{ background: '#450a0a', border: '1px solid #b91c1c', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <XCircle size={24} color="#ef4444" />
               <div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: '#ef4444' }}>{metrics.absent}</div>
-                <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#fca5a5', textTransform: 'uppercase' }}>Absent</div>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: '#ef4444' }}>{metrics.absent}</div>
+                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#fca5a5', textTransform: 'uppercase' }}>Absent</div>
               </div>
             </div>
 
-            <div style={{ background: '#172554', border: '1px solid #1d4ed8', padding: '16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <FileText size={28} color="#3b82f6" />
+            <div style={{ background: '#172554', border: '1px solid #1d4ed8', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FileText size={24} color="#3b82f6" />
               <div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: '#3b82f6' }}>{metrics.excused}</div>
-                <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#93c5fd', textTransform: 'uppercase' }}>Excused</div>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: '#3b82f6' }}>{metrics.excused}</div>
+                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#93c5fd', textTransform: 'uppercase' }}>Excused</div>
+              </div>
+            </div>
+
+            <div style={{ background: '#1e293b', border: '1px solid #475569', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <AlertCircle size={24} color="#94a3b8" />
+              <div>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: '#94a3b8' }}>{metrics.unmarked}</div>
+                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#cbd5e1', textTransform: 'uppercase' }}>Unmarked</div>
               </div>
             </div>
           </div>
@@ -277,19 +293,20 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                     <td style={{ padding: '12px 10px', color: '#38bdf8', fontFamily: 'monospace' }}>{st.admissionNo}</td>
                     <td style={{ padding: '12px 10px' }}>
                       <select 
-                        value={st.status} 
+                        value={st.status || ''} 
                         onChange={e => handleStatusChange(idx, e.target.value)}
                         style={{
                           padding: '6px 12px',
                           borderRadius: '6px',
                           fontWeight: 'bold',
                           fontSize: '12px',
-                          background: st.status === 'Present' ? 'rgba(34,197,94,0.15)' : st.status === 'Late' ? 'rgba(245,158,11,0.15)' : st.status === 'Absent' ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
-                          color: st.status === 'Present' ? '#22c55e' : st.status === 'Late' ? '#f59e0b' : st.status === 'Absent' ? '#ef4444' : '#3b82f6',
+                          background: st.status === 'Present' ? 'rgba(34,197,94,0.15)' : st.status === 'Late' ? 'rgba(245,158,11,0.15)' : st.status === 'Absent' ? 'rgba(239,68,68,0.15)' : st.status === 'Excused' ? 'rgba(59,130,246,0.15)' : '#1e293b',
+                          color: st.status === 'Present' ? '#22c55e' : st.status === 'Late' ? '#f59e0b' : st.status === 'Absent' ? '#ef4444' : st.status === 'Excused' ? '#3b82f6' : '#94a3b8',
                           border: 'none',
                           outline: 'none'
                         }}
                       >
+                        <option value="" style={{ background: '#0f172a', color: '#94a3b8' }}>-- Select Status --</option>
                         <option value="Present" style={{ background: '#0f172a', color: '#22c55e' }}>● Present</option>
                         <option value="Late" style={{ background: '#0f172a', color: '#f59e0b' }}>● Late</option>
                         <option value="Absent" style={{ background: '#0f172a', color: '#ef4444' }}>● Absent</option>
@@ -299,7 +316,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                     <td style={{ padding: '12px 10px' }}>
                       <input 
                         type="text" 
-                        value={st.remark}
+                        value={st.remark || ''}
                         placeholder="Add note..."
                         onChange={e => handleRemarkChange(idx, e.target.value)}
                         style={{ background: '#020617', border: '1px solid #1e293b', padding: '6px 10px', borderRadius: '6px', color: '#fff', fontSize: '12px', width: '100%', boxSizing: 'border-box' }}
@@ -322,10 +339,10 @@ export default function TeacherAttendanceDesk({ currentUser }) {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>PERIOD</label>
-              <select style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px' }}>
-                <option value="Weekly">Weekly</option>
-                <option value="Monthly">Monthly</option>
+              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>REGISTER PERIOD</label>
+              <select value={sessionPeriod} onChange={e => setSessionPeriod(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px' }}>
+                <option value="Morning">Morning Period</option>
+                <option value="Afternoon">Afternoon Period</option>
               </select>
             </div>
             <div>
@@ -346,7 +363,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
               <tr style={{ color: '#64748b', borderBottom: '1px solid #1e293b', fontSize: '10px' }}>
                 <th style={{ padding: '10px' }}>DATE RANGE</th>
                 <th style={{ padding: '10px' }}>CLASS</th>
-                <th style={{ padding: '10px' }}>TYPE</th>
+                <th style={{ padding: '10px' }}>SESSION</th>
                 <th style={{ padding: '10px' }}>GENERATED ON</th>
                 <th style={{ padding: '10px', textAlign: 'right' }}>ACTIONS</th>
               </tr>
@@ -355,8 +372,8 @@ export default function TeacherAttendanceDesk({ currentUser }) {
               <tr style={{ borderBottom: '1px solid #1e293b' }}>
                 <td style={{ padding: '12px 10px', fontWeight: 'bold' }}>7 Sep - 11 Sep 2026</td>
                 <td style={{ padding: '12px 10px' }}>{className}</td>
-                <td style={{ padding: '12px 10px' }}>Weekly</td>
-                <td style={{ padding: '12px 10px', color: '#94a3b8' }}>10 Sep 2026, 10:24 AM</td>
+                <td style={{ padding: '12px 10px', color: '#38bdf8' }}>{sessionPeriod}</td>
+                <td style={{ padding: '12px 10px', color: '#94a3b8' }}>14 Sep 2026, 02:26 PM</td>
                 <td style={{ padding: '12px 10px', textAlign: 'right' }}>
                   <button onClick={() => setShowBroadsheet(true)} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginRight: '6px' }}>Download</button>
                   <button onClick={() => setShowBroadsheet(true)} style={{ background: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={12} /></button>
@@ -375,18 +392,20 @@ export default function TeacherAttendanceDesk({ currentUser }) {
             <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '12px', marginBottom: '20px' }}>
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#1e3a8a' }}>RADIANT INTELLECTUALS' COLLEGE</h2>
               <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Knowledge • Discipline • Excellence</div>
-              <h3 style={{ margin: '10px 0 0 0', fontSize: '14px', background: '#1e3a8a', color: '#fff', padding: '4px 0', textTransform: 'uppercase' }}>WEEKLY ATTENDANCE RECORD</h3>
+              <h3 style={{ margin: '10px 0 0 0', fontSize: '14px', background: '#1e3a8a', color: '#fff', padding: '4px 0', textTransform: 'uppercase' }}>
+                WEEKLY ATTENDANCE RECORD ({sessionPeriod.toUpperCase()} SESSION)
+              </h3>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '16px', fontWeight: 'bold' }}>
               <div>
                 <div>Class: {className}</div>
-                <div>Class Teacher: {currentUser?.name || 'Mr. Adeboye'}</div>
+                <div>Class Teacher: {currentUser?.firstName ? `${currentUser.firstName} ${currentUser.surname || ''}` : currentUser?.name || 'Mr. Adeboye'}</div>
                 <div>Week: 7 Sep - 11 Sep 2026</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div>Term: First Term</div>
-                <div>Session: Morning</div>
+                <div>Register Session: {sessionPeriod}</div>
                 <div>Academic Year: 2026/2027</div>
               </div>
             </div>
@@ -413,7 +432,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                     <td style={{ border: '1px solid #000', padding: '6px' }}>{i + 1}</td>
                     <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', fontWeight: 'bold' }}>{st.name}</td>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>{st.admissionNo}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px' }}>P</td>
+                    <td style={{ border: '1px solid #000', padding: '6px' }}>{st.status === 'Present' ? 'P' : st.status === 'Late' ? 'L' : st.status === 'Absent' ? 'A' : st.status === 'Excused' ? 'E' : '-'}</td>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>P</td>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>P</td>
                     <td style={{ border: '1px solid #000', padding: '6px' }}>P</td>
