@@ -6,7 +6,6 @@ import API from '../api/axiosInstance';
 const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
   // --- STATE PARAMETERS ---
   const [activeFilterCampus, setActiveFilterCampus] = useState(defaultCampus);
-  // Independent form target campus state (prevents defaulting back when filter is "All Campuses")
   const [targetCampus, setTargetCampus] = useState(
     defaultCampus && defaultCampus !== 'All Campuses' ? defaultCampus : 'Great Campus'
   );
@@ -44,12 +43,11 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
     }
   };
 
-  // 🟢 2. FETCH ALL FEE STRUCTURES LOG (Dynamically fetches based on active filter campus)
+  // 🟢 2. FETCH ALL FEE STRUCTURES LOG (Fetches across all campuses unconditionally)
   const fetchDashboardData = async () => {
     try {
       setFetching(true);
-      const queryCampus = activeFilterCampus || 'All Campuses';
-      const { data } = await API.get(`/finance/structures?campus=${encodeURIComponent(queryCampus)}`);
+      const { data } = await API.get('/finance/structures?campus=All%20Campuses');
       if (data?.success) {
         setActiveStructures(data.data || []);
       }
@@ -168,12 +166,11 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
 
     setLoading(true);
     try {
-      // 🔒 Force explicit campus selection payload
       const payload = {
         className: selectedClass,
         term: selectedTerm,
         session: selectedSession,
-        campus: targetCampus, // 👈 Target Campus dropdown selection strictly used
+        campus: targetCampus,
         targetCampus: targetCampus,
         items: structureItems.map((item) => ({
           name: item.name.trim(),
@@ -238,12 +235,13 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
     .filter((item) => item.checked)
     .reduce((sum, current) => sum + (Number(current.amount) || 0), 0);
 
-  // Filter Active Log display by selected active campus
+  // Filter Active Log display by selected active campus or target campus
   const filteredActiveStructures = activeStructures.filter(
     (struct) =>
       !activeFilterCampus ||
       activeFilterCampus === 'All Campuses' ||
       struct.campus === activeFilterCampus ||
+      struct.campus === targetCampus ||
       (!struct.campus && activeFilterCampus === 'Emerald Campus')
   );
 
