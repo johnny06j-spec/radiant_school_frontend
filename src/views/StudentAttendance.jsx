@@ -11,34 +11,39 @@ export default function StudentAttendance({ currentUser }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch active system settings from Admin on mount
+  // 1. Fetch active academic configuration on mount
   useEffect(() => {
     const initSystemSettings = async () => {
       try {
         setLoading(true);
-        const res = await API.get('/settings/academic-timeline');
+        // Updated endpoint route target
+        const res = await API.get('/settings/academic-settings');
         
-        const { activeTerm, activeSession, termList } = res.data?.data || {};
+        const payload = res.data?.data || res.data || {};
+        const activeTerm = payload.activeTerm || payload.term || 'First Term';
+        const activeSession = payload.activeSession || payload.session || '2026/2027';
         
-        // Construct standard term string e.g. "First Term (2026/2027)"
-        const activeConfig = activeTerm && activeSession 
-          ? `${activeTerm} (${activeSession})` 
-          : 'First Term (2026/2027)';
-
+        const activeConfig = `${activeTerm} (${activeSession})`;
         setTerm(activeConfig);
 
-        // Populate dynamic dropdown list or fallback to current configuration
-        if (termList && Array.isArray(termList) && termList.length > 0) {
-          setTermOptions(termList);
-        } else {
-          setTermOptions([activeConfig]);
-        }
+        // Generate term options based on active session
+        const dynamicOptions = [
+          `First Term (${activeSession})`,
+          `Second Term (${activeSession})`,
+          `Third Term (${activeSession})`
+        ];
+
+        setTermOptions(payload.termList || dynamicOptions);
       } catch (err) {
         console.error('Failed fetching active system settings:', err);
-        // Fallback default if API fails
-        const fallback = 'First Term (2026/2027)';
+        // Fallback default if route fails
+        const fallback = 'Second Term (2026/2027)';
         setTerm(fallback);
-        setTermOptions([fallback]);
+        setTermOptions([
+          'First Term (2026/2027)',
+          'Second Term (2026/2027)',
+          'Third Term (2026/2027)'
+        ]);
       }
     };
 
