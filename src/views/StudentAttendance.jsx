@@ -4,13 +4,51 @@ import { CheckCircle2, Clock, XCircle, FileText, RefreshCw } from 'lucide-react'
 import API from '../api/axiosInstance';
 
 export default function StudentAttendance({ currentUser }) {
-  const [term, setTerm] = useState('First Term (2025/2026)');
+  const [term, setTerm] = useState('');
+  const [termOptions, setTermOptions] = useState([]);
   const [filterType, setFilterType] = useState('All Days');
   const [summary, setSummary] = useState({ present: 0, late: 0, absent: 0, excused: 0, percentage: 100 });
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 1. Fetch active system settings from Admin on mount
   useEffect(() => {
+    const initSystemSettings = async () => {
+      try {
+        setLoading(true);
+        const res = await API.get('/settings/academic-timeline');
+        
+        const { activeTerm, activeSession, termList } = res.data?.data || {};
+        
+        // Construct standard term string e.g. "First Term (2026/2027)"
+        const activeConfig = activeTerm && activeSession 
+          ? `${activeTerm} (${activeSession})` 
+          : 'First Term (2026/2027)';
+
+        setTerm(activeConfig);
+
+        // Populate dynamic dropdown list or fallback to current configuration
+        if (termList && Array.isArray(termList) && termList.length > 0) {
+          setTermOptions(termList);
+        } else {
+          setTermOptions([activeConfig]);
+        }
+      } catch (err) {
+        console.error('Failed fetching active system settings:', err);
+        // Fallback default if API fails
+        const fallback = 'First Term (2026/2027)';
+        setTerm(fallback);
+        setTermOptions([fallback]);
+      }
+    };
+
+    initSystemSettings();
+  }, []);
+
+  // 2. Fetch attendance logs whenever selected term changes
+  useEffect(() => {
+    if (!term) return;
+
     const fetchStudentAttendance = async () => {
       try {
         setLoading(true);
@@ -25,6 +63,7 @@ export default function StudentAttendance({ currentUser }) {
         setLoading(false);
       }
     };
+
     fetchStudentAttendance();
   }, [term]);
 
@@ -60,11 +99,11 @@ export default function StudentAttendance({ currentUser }) {
     }
   };
 
-  if (loading) {
+  if (loading && !term) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '12px' }}>
         <RefreshCw size={24} className="animate-spin" color="var(--accent-primary)" />
-        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Loading attendance history...</span>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Synchronizing with active system settings...</span>
       </div>
     );
   }
@@ -83,6 +122,7 @@ export default function StudentAttendance({ currentUser }) {
           </p>
         </div>
 
+        {/* DYNAMIC TERM SELECTOR */}
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: '8px' }}>
           <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 'bold', display: 'block' }}>SELECT TERM</span>
           <select 
@@ -90,8 +130,11 @@ export default function StudentAttendance({ currentUser }) {
             onChange={e => setTerm(e.target.value)}
             style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
           >
-            <option value="First Term (2025/2026)" style={{ background: 'var(--bg-surface)' }}>First Term (2025/2026)</option>
-            <option value="Second Term (2025/2026)" style={{ background: 'var(--bg-surface)' }}>Second Term (2025/2026)</option>
+            {termOptions.map((opt, idx) => (
+              <option key={idx} value={opt} style={{ background: 'var(--bg-surface)' }}>
+                {opt}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -176,7 +219,13 @@ export default function StudentAttendance({ currentUser }) {
               </tr>
             </thead>
             <tbody>
-              {filteredRecords.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="3" style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
+                    Updating logs...
+                  </td>
+                </tr>
+              ) : filteredRecords.length > 0 ? (
                 filteredRecords.map((rec, idx) => {
                   const d = new Date(rec.date);
                   const formattedDate = !isNaN(d) ? d.toISOString().split('T')[0] : rec.date;
