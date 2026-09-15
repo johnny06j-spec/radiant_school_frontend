@@ -11,16 +11,22 @@ export default function StudentAttendance({ currentUser }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔒 1. Fetch System Settings configured by Admin
+  // 🔒 1. Fetch live System Settings from Admin configuration
   useEffect(() => {
     const fetchActiveSystemSettings = async () => {
       try {
         setLoading(true);
-        const res = await API.get('/settings/academic-settings');
+        // Tries system config routes
+        let res;
+        try {
+          res = await API.get('/system/config');
+        } catch (e) {
+          res = await API.get('/config');
+        }
         
         const payload = res.data?.data || res.data || {};
-        const activeTerm = payload.activeTerm || 'First Term';
-        const activeSession = payload.activeSession || '2026/2027';
+        const activeTerm = payload.activeTerm || payload.currentTerm || 'First Term';
+        const activeSession = payload.activeSession || payload.currentSession || '2026/2027';
         const activeConfig = payload.activeConfig || `${activeTerm} (${activeSession})`;
 
         setTerm(activeConfig);
@@ -34,7 +40,6 @@ export default function StudentAttendance({ currentUser }) {
         setTermOptions(payload.termList || defaultOptions);
       } catch (err) {
         console.error('Failed fetching dynamic admin settings:', err);
-        // Fallback safety if network drops
         const fallback = 'First Term (2026/2027)';
         setTerm(fallback);
         setTermOptions([fallback]);
