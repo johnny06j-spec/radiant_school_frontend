@@ -44,11 +44,12 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
     }
   };
 
-  // 🟢 2. FETCH ALL FEE STRUCTURES LOG (Fetches across all campuses)
+  // 🟢 2. FETCH ALL FEE STRUCTURES LOG (Dynamically fetches based on active filter campus)
   const fetchDashboardData = async () => {
     try {
       setFetching(true);
-      const { data } = await API.get('/finance/structures?campus=All%20Campuses');
+      const queryCampus = activeFilterCampus || 'All Campuses';
+      const { data } = await API.get(`/finance/structures?campus=${encodeURIComponent(queryCampus)}`);
       if (data?.success) {
         setActiveStructures(data.data || []);
       }
@@ -61,8 +62,12 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
 
   useEffect(() => {
     fetchSystemSettings();
-    fetchDashboardData();
   }, []);
+
+  // Refetch table records automatically whenever the selected campus filter changes
+  useEffect(() => {
+    fetchDashboardData();
+  }, [activeFilterCampus]);
 
   // Sync workspace view when class, target campus, or system-locked term/session adjusts
   useEffect(() => {
@@ -259,7 +264,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
       <header
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justify: 'space-between',
           alignItems: 'center',
           marginBottom: '2rem',
           paddingBottom: '1rem',
@@ -711,7 +716,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justify: 'space-between',
             alignItems: 'center',
             marginTop: '1.5rem',
             paddingTop: '1.5rem',
@@ -827,7 +832,7 @@ const SetClassFees = ({ defaultCampus = 'Emerald Campus' }) => {
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center',
+              justifyContent: 'center',
             }}
           >
             2
