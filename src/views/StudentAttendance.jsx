@@ -11,22 +11,21 @@ export default function StudentAttendance({ currentUser }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch active academic configuration on mount
+  // 1. Fetch live system settings from active /config endpoint on mount
   useEffect(() => {
     const initSystemSettings = async () => {
       try {
         setLoading(true);
-        // Updated endpoint route target
-        const res = await API.get('/settings/academic-settings');
+        // Uses the existing working /config endpoint
+        const res = await API.get('/config');
         
         const payload = res.data?.data || res.data || {};
-        const activeTerm = payload.activeTerm || payload.term || 'First Term';
-        const activeSession = payload.activeSession || payload.session || '2026/2027';
+        const activeTerm = payload.activeTerm || payload.currentTerm || 'First Term';
+        const activeSession = payload.activeSession || payload.currentSession || '2026/2027';
         
         const activeConfig = `${activeTerm} (${activeSession})`;
         setTerm(activeConfig);
 
-        // Generate term options based on active session
         const dynamicOptions = [
           `First Term (${activeSession})`,
           `Second Term (${activeSession})`,
@@ -36,8 +35,7 @@ export default function StudentAttendance({ currentUser }) {
         setTermOptions(payload.termList || dynamicOptions);
       } catch (err) {
         console.error('Failed fetching active system settings:', err);
-        // Fallback default if route fails
-        const fallback = 'Second Term (2026/2027)';
+        const fallback = 'First Term (2026/2027)';
         setTerm(fallback);
         setTermOptions([
           'First Term (2026/2027)',
