@@ -11,44 +11,40 @@ export default function StudentAttendance({ currentUser }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch live system settings from active /config endpoint on mount
+  // 🔒 1. Fetch System Settings configured by Admin
   useEffect(() => {
-    const initSystemSettings = async () => {
+    const fetchActiveSystemSettings = async () => {
       try {
         setLoading(true);
-        // Uses the existing working /config endpoint
-        const res = await API.get('/config');
+        const res = await API.get('/settings/academic-settings');
         
         const payload = res.data?.data || res.data || {};
-        const activeTerm = payload.activeTerm || payload.currentTerm || 'First Term';
-        const activeSession = payload.activeSession || payload.currentSession || '2026/2027';
-        
-        const activeConfig = `${activeTerm} (${activeSession})`;
+        const activeTerm = payload.activeTerm || 'First Term';
+        const activeSession = payload.activeSession || '2026/2027';
+        const activeConfig = payload.activeConfig || `${activeTerm} (${activeSession})`;
+
         setTerm(activeConfig);
 
-        const dynamicOptions = [
+        const defaultOptions = [
           `First Term (${activeSession})`,
           `Second Term (${activeSession})`,
           `Third Term (${activeSession})`
         ];
 
-        setTermOptions(payload.termList || dynamicOptions);
+        setTermOptions(payload.termList || defaultOptions);
       } catch (err) {
-        console.error('Failed fetching active system settings:', err);
+        console.error('Failed fetching dynamic admin settings:', err);
+        // Fallback safety if network drops
         const fallback = 'First Term (2026/2027)';
         setTerm(fallback);
-        setTermOptions([
-          'First Term (2026/2027)',
-          'Second Term (2026/2027)',
-          'Third Term (2026/2027)'
-        ]);
+        setTermOptions([fallback]);
       }
     };
 
-    initSystemSettings();
+    fetchActiveSystemSettings();
   }, []);
 
-  // 2. Fetch attendance logs whenever selected term changes
+  // 2. Query Student Logs for the Active Term
   useEffect(() => {
     if (!term) return;
 
@@ -61,7 +57,7 @@ export default function StudentAttendance({ currentUser }) {
           setRecords(res.data.records || []);
         }
       } catch (err) {
-        console.error('Failed fetching student attendance:', err);
+        console.error('Failed fetching attendance records:', err);
       } finally {
         setLoading(false);
       }
@@ -106,7 +102,7 @@ export default function StudentAttendance({ currentUser }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '12px' }}>
         <RefreshCw size={24} className="animate-spin" color="var(--accent-primary)" />
-        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Synchronizing with active system settings...</span>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Syncing with system settings...</span>
       </div>
     );
   }
@@ -114,7 +110,7 @@ export default function StudentAttendance({ currentUser }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
       
-      {/* GREETING & TERM CONTROLS */}
+      {/* HEADER & CONTROLS */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
@@ -125,7 +121,7 @@ export default function StudentAttendance({ currentUser }) {
           </p>
         </div>
 
-        {/* DYNAMIC TERM SELECTOR */}
+        {/* ADMIN CONTROLLED SELECTOR */}
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: '8px' }}>
           <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 'bold', display: 'block' }}>SELECT TERM</span>
           <select 
@@ -172,7 +168,6 @@ export default function StudentAttendance({ currentUser }) {
       {/* ATTENDANCE TABLE CARD */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '14px', width: '100%', boxSizing: 'border-box' }}>
         
-        {/* CARD CONTROLS HEADER */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
@@ -180,13 +175,11 @@ export default function StudentAttendance({ currentUser }) {
               <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>Class session attendance log</p>
             </div>
             
-            {/* Overall Percentage Badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', padding: '4px 8px', borderRadius: '20px' }}>
               <span style={{ fontSize: '11px', fontWeight: '800', color: '#22c55e' }}>{summary.percentage}% Score</span>
             </div>
           </div>
 
-          {/* RESPONSIVE FILTER PILLS CONTAINER */}
           <div style={{ display: 'flex', background: 'var(--bg-main)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)', width: '100%', boxSizing: 'border-box' }}>
             {['All Days', 'This Week', 'This Month'].map(t => (
               <button
@@ -211,7 +204,6 @@ export default function StudentAttendance({ currentUser }) {
           </div>
         </div>
 
-        {/* DATA TABLE */}
         <div style={{ overflowX: 'auto', width: '100%' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
