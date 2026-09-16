@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle, Clock, XCircle, FileText, Save, 
-  Eye, FileSpreadsheet, CheckCheck, Lock, UserCheck, AlertCircle 
+  Eye, FileSpreadsheet, CheckCheck, Lock, UserCheck, AlertCircle, Download
 } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 import axiosInstance from '../../api/axiosInstance';
 
 export default function TeacherAttendanceDesk({ currentUser }) {
@@ -25,6 +26,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [isNotClassTeacher, setIsNotClassTeacher] = useState(false);
   const [showBroadsheet, setShowBroadsheet] = useState(false);
 
@@ -185,6 +187,35 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  // 📄 DOWNLOAD PDF BROADSHEET FUNCTION
+  const handleDownloadPDF = () => {
+    const element = document.getElementById('attendance-broadsheet-content');
+    if (!element) return;
+
+    setDownloading(true);
+
+    const activeBounds = activeReportWeek || currentReportWeek;
+    const sanitizedFileName = `Weekly_Attendance_${className}_${sessionPeriod}_Period.pdf`.replace(/\s+/g, '_');
+
+    const opt = {
+      margin:       [8, 8, 8, 8],
+      filename:     sanitizedFileName,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => setDownloading(false))
+      .catch((err) => {
+        console.error('PDF generation error:', err);
+        setDownloading(false);
+      });
   };
 
   const getStatusSymbol = (status) => {
@@ -502,84 +533,95 @@ export default function TeacherAttendanceDesk({ currentUser }) {
         </div>
       )}
 
-      {/* PRINTABLE BROADSHEET MODAL */}
+      {/* PRINTABLE & DOWNLOADABLE BROADSHEET MODAL */}
       {showBroadsheet && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '12px' }}>
           <div style={{ background: '#ffffff', color: '#000', width: '100%', maxWidth: '850px', padding: '20px 16px', borderRadius: '8px', maxHeight: '92vh', overflowY: 'auto', fontFamily: 'sans-serif' }}>
             
-            <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '16px' }}>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#1e3a8a' }}>RADIANT INTELLECTUALS' COLLEGE</h2>
-              <div style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Knowledge • Discipline • Excellence</div>
-              <h3 style={{ margin: '8px 0 0 0', fontSize: '12px', background: '#1e3a8a', color: '#fff', padding: '4px 0', textTransform: 'uppercase' }}>
-                WEEKLY ATTENDANCE RECORD ({sessionPeriod.toUpperCase()} SESSION)
-              </h3>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', fontSize: '10px', marginBottom: '14px', fontWeight: 'bold', gap: '8px' }}>
-              <div>
-                <div>Class: {className}</div>
-                <div>Class Teacher: {currentUser?.firstName ? `${currentUser.firstName} ${currentUser.surname || ''}` : currentUser?.name || 'Mr. Adeboye'}</div>
-                <div>Week: {activeWeekBounds.rangeString}</div>
+            {/* 🟢 ID ADDED HERE FOR HTML2PDF TARGETING */}
+            <div id="attendance-broadsheet-content" style={{ background: '#ffffff', color: '#000', padding: '10px' }}>
+              <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '16px' }}>
+                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#1e3a8a' }}>RADIANT INTELLECTUALS' COLLEGE</h2>
+                <div style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Knowledge • Discipline • Excellence</div>
+                <h3 style={{ margin: '8px 0 0 0', fontSize: '12px', background: '#1e3a8a', color: '#fff', padding: '4px 0', textTransform: 'uppercase' }}>
+                  WEEKLY ATTENDANCE RECORD ({sessionPeriod.toUpperCase()} SESSION)
+                </h3>
               </div>
-              <div>
-                <div>Term: First Term</div>
-                <div>Register Session: {sessionPeriod}</div>
-                <div>Academic Year: 2026/2027</div>
+
+              <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', fontSize: '10px', marginBottom: '14px', fontWeight: 'bold', gap: '8px' }}>
+                <div>
+                  <div>Class: {className}</div>
+                  <div>Class Teacher: {currentUser?.firstName ? `${currentUser.firstName} ${currentUser.surname || ''}` : currentUser?.name || 'Mr. Adeboye'}</div>
+                  <div>Week: {activeWeekBounds.rangeString}</div>
+                </div>
+                <div>
+                  <div>Term: First Term</div>
+                  <div>Register Session: {sessionPeriod}</div>
+                  <div>Academic Year: 2026/2027</div>
+                </div>
               </div>
-            </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', fontSize: '10px', marginBottom: '16px' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', border: '1px solid #000' }}>
-                    <th style={{ border: '1px solid #000', padding: '4px' }}>S/N</th>
-                    <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>STUDENT NAME</th>
-                    <th style={{ border: '1px solid #000', padding: '4px' }}>REG. NO</th>
-                    {activeWeekBounds.weekDays.map((wd, i) => (
-                      <th key={i} style={{ border: '1px solid #000', padding: '4px' }}>{wd.label}</th>
-                    ))}
-                    <th style={{ border: '1px solid #000', padding: '4px' }}>PRESENT</th>
-                    <th style={{ border: '1px solid #000', padding: '4px' }}>ABSENT</th>
-                    <th style={{ border: '1px solid #000', padding: '4px' }}>%</th>
-                  </tr>
-                </thead>
-                <tbody style={{ textAlign: 'center' }}>
-                  {(weeklyReport.length > 0 ? weeklyReport : students).map((st, i) => (
-                    <tr key={st.studentId || i}>
-                      <td style={{ border: '1px solid #000', padding: '4px' }}>{i + 1}</td>
-                      <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', fontWeight: 'bold' }}>{st.name}</td>
-                      <td style={{ border: '1px solid #000', padding: '4px' }}>{st.admissionNo}</td>
-                      
-                      {activeWeekBounds.weekDays.map((wd, idx) => {
-                        const dayStatus = st.logsByDate ? st.logsByDate[wd.isoDate] : '';
-                        return (
-                          <td key={idx} style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>
-                            {getStatusSymbol(dayStatus)}
-                          </td>
-                        );
-                      })}
-
-                      <td style={{ border: '1px solid #000', padding: '4px' }}>{st.present ?? (st.status === 'Present' ? 1 : 0)}</td>
-                      <td style={{ border: '1px solid #000', padding: '4px' }}>{st.absent ?? (st.status === 'Absent' ? 1 : 0)}</td>
-                      <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{st.attendancePercentage ?? 100}%</td>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', fontSize: '10px', marginBottom: '16px' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', border: '1px solid #000' }}>
+                      <th style={{ border: '1px solid #000', padding: '4px' }}>S/N</th>
+                      <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>STUDENT NAME</th>
+                      <th style={{ border: '1px solid #000', padding: '4px' }}>REG. NO</th>
+                      {activeWeekBounds.weekDays.map((wd, i) => (
+                        <th key={i} style={{ border: '1px solid #000', padding: '4px' }}>{wd.label}</th>
+                      ))}
+                      <th style={{ border: '1px solid #000', padding: '4px' }}>PRESENT</th>
+                      <th style={{ border: '1px solid #000', padding: '4px' }}>ABSENT</th>
+                      <th style={{ border: '1px solid #000', padding: '4px' }}>%</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody style={{ textAlign: 'center' }}>
+                    {(weeklyReport.length > 0 ? weeklyReport : students).map((st, i) => (
+                      <tr key={st.studentId || i}>
+                        <td style={{ border: '1px solid #000', padding: '4px' }}>{i + 1}</td>
+                        <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', fontWeight: 'bold' }}>{st.name}</td>
+                        <td style={{ border: '1px solid #000', padding: '4px' }}>{st.admissionNo}</td>
+                        
+                        {activeWeekBounds.weekDays.map((wd, idx) => {
+                          const dayStatus = st.logsByDate ? st.logsByDate[wd.isoDate] : '';
+                          return (
+                            <td key={idx} style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>
+                              {getStatusSymbol(dayStatus)}
+                            </td>
+                          );
+                        })}
+
+                        <td style={{ border: '1px solid #000', padding: '4px' }}>{st.present ?? (st.status === 'Present' ? 1 : 0)}</td>
+                        <td style={{ border: '1px solid #000', padding: '4px' }}>{st.absent ?? (st.status === 'Absent' ? 1 : 0)}</td>
+                        <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{st.attendancePercentage ?? 100}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: '24px', fontSize: '10px', gap: '16px' }}>
+                <div>
+                  <div>Teacher's Signature: __________________</div>
+                  <div style={{ marginTop: '2px' }}>Date: {new Date().toLocaleDateString()}</div>
+                </div>
+                <div>
+                  <div>Principal/HM Signature: __________________</div>
+                  <div style={{ marginTop: '2px' }}>Date: ______________</div>
+                </div>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: '24px', fontSize: '10px', gap: '16px' }}>
-              <div>
-                <div>Teacher's Signature: __________________</div>
-                <div style={{ marginTop: '2px' }}>Date: {new Date().toLocaleDateString()}</div>
-              </div>
-              <div>
-                <div>Principal/HM Signature: __________________</div>
-                <div style={{ marginTop: '2px' }}>Date: ______________</div>
-              </div>
-            </div>
-
+            {/* ACTION BUTTONS */}
             <div style={{ marginTop: '20px', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={handleDownloadPDF} 
+                disabled={downloading}
+                style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Download size={14} /> {downloading ? 'Downloading PDF...' : 'Download PDF'}
+              </button>
               <button onClick={() => window.print()} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>Print Broadsheet</button>
               <button onClick={() => setShowBroadsheet(false)} style={{ background: '#64748b', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>Close</button>
             </div>
