@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, AlertTriangle, ShieldCheck, Search, 
   RotateCcw, Award, FileText, ArrowRight, X, Check, Lock,
-  ArrowLeft, Send, GraduationCap
+  ArrowLeft, Send, GraduationCap, Users
 } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
 
@@ -118,7 +118,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
           session,
           status: statusFilter,
           schoolSection: isHM ? 'PRIMARY' : 'SECONDARY',
-          campus: activeCampus // 🔒 Strictly filter reviews by active executive campus
+          campus: activeCampus
         }
       }).catch(() => null);
 
@@ -132,7 +132,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         params: { 
           assignedClass: selectedClass,
           currentClass: selectedClass,
-          campus: activeCampus // 🔒 Strictly filter student list by active executive campus
+          campus: activeCampus
         }
       });
       const list = res.data?.students || res.data || [];
@@ -233,7 +233,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         className: selectedClass,
         term,
         session,
-        campus: activeCampus, // 🔒 Campus Isolated Sign-off
+        campus: activeCampus,
         schoolSection: isHM ? 'PRIMARY' : 'SECONDARY',
         overallAverage: Number(calculatedOverallAvg),
         subjects: formattedSubjects,
@@ -269,7 +269,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         studentId: activeStudent._id,
         term,
         session,
-        campus: activeCampus, // 🔒 Campus Context
+        campus: activeCampus,
         rejectionReason
       };
 
@@ -306,7 +306,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
   const headerPhotoUrl = getStudentPhotoUrl(currentStudentMeta);
 
   return (
-    <div style={{ padding: '10px 0', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#f8fafc' }}>
+    <div style={{ padding: '10px 0', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#f8fafc', width: '100%', boxSizing: 'border-box' }}>
       <style>{`
         .exec-grid-container {
           display: grid;
@@ -316,7 +316,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         }
         .exec-header-grid {
           display: grid;
-          grid-template-columns: 110px 1fr 200px;
+          grid-template-columns: 100px 1fr 180px;
           gap: 16px;
           align-items: center;
         }
@@ -325,9 +325,22 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
           grid-template-columns: 1fr 1fr;
           gap: 16px;
         }
+        .table-scroll-container {
+          width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 📱 RESPONSIVE MOBILE ADJUSTMENTS */
         @media (max-width: 900px) {
           .exec-grid-container {
             grid-template-columns: 1fr !important;
+          }
+          .exec-roster-column {
+            display: ${activeStudent ? 'none' : 'block'} !important;
+          }
+          .exec-review-column {
+            display: ${activeStudent ? 'block' : 'none'} !important;
           }
           .exec-header-grid {
             grid-template-columns: 1fr !important;
@@ -336,36 +349,43 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
           .exec-domains-grid {
             grid-template-columns: 1fr !important;
           }
+          .mobile-sticky-top {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: #0b1329;
+            padding-bottom: 8px;
+          }
         }
       `}</style>
 
       {/* LOCKED FILTER CONTROL BAR */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', backgroundColor: '#0b1329', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', backgroundColor: '#0b1329', padding: '14px', borderRadius: '12px', border: '1px solid #1e293b', marginBottom: '16px' }}>
         <div>
           <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Lock size={10} /> ACADEMIC TERM
+            <Lock size={10} /> TERM
           </label>
-          <input type="text" value={term} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#38bdf8', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', cursor: 'not-allowed' }} />
+          <input type="text" value={term} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#38bdf8', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', cursor: 'not-allowed', boxSizing: 'border-box' }} />
         </div>
         <div>
           <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Lock size={10} /> SESSION
           </label>
-          <input type="text" value={session} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#38bdf8', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', cursor: 'not-allowed' }} />
+          <input type="text" value={session} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#38bdf8', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', cursor: 'not-allowed', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>ACTIVE CAMPUS</label>
-          <input type="text" value={activeCampus} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#c084fc', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', cursor: 'not-allowed' }} />
+          <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>CAMPUS</label>
+          <input type="text" value={activeCampus} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#c084fc', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', cursor: 'not-allowed', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>TARGET CLASS</label>
-          <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#fff', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold' }}>
+          <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>CLASS</label>
+          <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#fff', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', boxSizing: 'border-box' }}>
             {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
           <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>STATUS</label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#fff', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold' }}>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#fff', marginTop: '4px', fontSize: '12px', outline: 'none', fontWeight: 'bold', boxSizing: 'border-box' }}>
             <option value="Submitted">Submitted for Review</option>
             <option value="Returned for Revision">Returned for Revision</option>
             <option value="Pending Review">Pending Review (All Enrolled)</option>
@@ -391,7 +411,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
       <div className="exec-grid-container">
         
         {/* LEFT COLUMN: ROSTER QUEUE */}
-        <div style={{ backgroundColor: '#0b1329', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b' }}>
+        <div className="exec-roster-column" style={{ backgroundColor: '#0b1329', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b' }}>
           <div style={{ marginBottom: '12px' }}>
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#fff' }}>
               Students Awaiting Review ({students.length})
@@ -399,7 +419,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
             <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748b' }}>Showing rosters for {activeCampus}</p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '720px', overflowY: 'auto', paddingRight: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '720px', overflowY: 'auto' }}>
             {students.map(s => {
               const isSelected = activeStudent?._id === s._id;
               const photoUrl = getStudentPhotoUrl(s);
@@ -413,7 +433,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
                   style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
-                    justifyContent: 'space-between', 
+                    justify: 'space-between', 
                     padding: '10px 12px', 
                     borderRadius: '8px', 
                     backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.18)' : '#030712', 
@@ -455,209 +475,212 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         </div>
 
         {/* RIGHT COLUMN: REPORT CARD REVIEW PANEL */}
-        {activeStudent && singleReview ? (
-          <div style={{ backgroundColor: '#0b1329', padding: '20px', borderRadius: '12px', border: '1px solid #1e293b' }}>
-            
-            {/* TOP BAR */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #1e293b', paddingBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button onClick={() => setActiveStudent(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
-                  <ArrowLeft size={14} /> Back to List
+        <div className="exec-review-column" style={{ width: '100%' }}>
+          {activeStudent && singleReview ? (
+            <div style={{ backgroundColor: '#0b1329', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b', boxSizing: 'border-box' }}>
+              
+              {/* MOBILE STICKY TOP BAR WITH RETURN BUTTON */}
+              <div className="mobile-sticky-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #1e293b', paddingBottom: '12px' }}>
+                <button 
+                  onClick={() => { setActiveStudent(null); setSingleReview(null); }} 
+                  style={{ background: '#1e293b', border: '1px solid #334155', color: '#38bdf8', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 'bold' }}
+                >
+                  <ArrowLeft size={16} /> Select Different Student
                 </button>
-                <span style={{ color: '#fff', fontSize: '14px', fontWeight: '800' }}>
-                  {currentStudentMeta?.admissionNo} • {getStudentFullName(currentStudentMeta)}
+                <span style={{ color: '#94a3b8', fontSize: '11px', fontFamily: 'monospace' }}>
+                  {currentStudentMeta?.admissionNo}
                 </span>
               </div>
-            </div>
 
-            {/* REJECTION / RETURN NOTICE BANNER */}
-            {(activeStudent.rejectionReason || singleReview.review?.rejectionReason) && (
-              <div style={{ padding: '12px 16px', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', marginBottom: '16px', color: '#f87171', fontSize: '12px' }}>
-                <div style={{ fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                  <AlertTriangle size={14} /> RETURNED BY ADMIN FOR REVISION:
-                </div>
-                <div style={{ fontStyle: 'italic', color: '#fca5a5' }}>
-                  "{activeStudent.rejectionReason || singleReview.review?.rejectionReason}"
-                </div>
-              </div>
-            )}
-
-            {/* STUDENT HEADER CARD WITH IMAGE & UNIFIED NAME */}
-            <div className="exec-header-grid" style={{ backgroundColor: '#030712', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b', marginBottom: '20px' }}>
-              <div style={{ width: '100px', height: '110px', borderRadius: '8px', backgroundColor: '#1e293b', overflow: 'hidden', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
-                {headerPhotoUrl ? (
-                  <img src={headerPhotoUrl} alt="passport" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ fontSize: '32px', fontWeight: 'bold', color: '#38bdf8' }}>{getStudentFullName(currentStudentMeta)[0]}</span>
-                )}
-              </div>
-
-              <div>
-                <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900', color: '#fff' }}>
-                  {getStudentFullName(currentStudentMeta)}
-                </h2>
-                <div style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span>Admission No: <strong style={{ color: '#fff', fontFamily: 'monospace' }}>{currentStudentMeta?.admissionNo || 'N/A'}</strong></span>
-                  <span>Class: <strong style={{ color: '#fff' }}>{selectedClass}</strong> • Campus: <strong style={{ color: '#c084fc' }}>{activeCampus}</strong></span>
-                  <span>Term: <strong style={{ color: '#38bdf8' }}>{term}</strong> • Session: <strong style={{ color: '#38bdf8' }}>{session}</strong></span>
-                </div>
-              </div>
-
-              <div style={{ backgroundColor: '#0b1329', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>OVERALL TERM AVG: <strong style={{ color: '#38bdf8' }}>{singleReview.overallAverage}%</strong></span>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>SUBJECTS ENTERED: <strong style={{ color: '#fff' }}>{singleReview.subjectCount || singleReview.subjects?.length || 0}</strong></span>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>STATUS: <strong style={{ color: '#facc15' }}>{singleReview.review?.status || statusFilter}</strong></span>
-              </div>
-            </div>
-
-            {/* SUBJECTS & SCORES TABLE */}
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase' }}>SUBJECTS & SCORES</h4>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '11px' }}>
-                      <th style={{ padding: '8px' }}>SUBJECT</th>
-                      <th style={{ padding: '8px', textAlign: 'center' }}>TEST 1</th>
-                      <th style={{ padding: '8px', textAlign: 'center' }}>TEST 2</th>
-                      {!isHM && <th style={{ padding: '8px', textAlign: 'center' }}>PROJ</th>}
-                      <th style={{ padding: '8px', textAlign: 'center' }}>EXAM</th>
-                      <th style={{ padding: '8px', textAlign: 'center' }}>{showCumulative ? 'TOTAL (100) A' : 'TOTAL (100)'}</th>
-                      {showCumulative && <th style={{ padding: '8px', textAlign: 'center', color: '#c084fc' }}>CUM B.F (100) B</th>}
-                      {showCumulative && <th style={{ padding: '8px', textAlign: 'center', color: '#38bdf8' }}>TOTAL AVG (A+B)/2</th>}
-                      <th style={{ padding: '8px', textAlign: 'center' }}>GRADE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {singleReview.subjects?.map((sub, i) => {
-                      const test1 = sub.ca1 ?? sub.test1 ?? sub.ca1Score ?? 0;
-                      const test2 = sub.ca2 ?? sub.test2 ?? sub.ca2Score ?? 0;
-                      const proj = sub.project ?? sub.proj ?? sub.projectScore ?? 0;
-                      const exam = sub.exam ?? sub.examScore ?? 0;
-                      const finalScore = showCumulative ? (sub.averageScore || sub.totalScore) : sub.totalScore;
-
-                      return (
-                        <tr key={i} style={{ borderBottom: '1px solid #1e293b' }}>
-                          <td style={{ padding: '8px', fontWeight: '600', color: '#fff' }}>{sub.subject}</td>
-                          <td style={{ textAlign: 'center', padding: '8px', color: '#e2e8f0', fontWeight: '600' }}>{test1}</td>
-                          <td style={{ textAlign: 'center', padding: '8px', color: '#e2e8f0', fontWeight: '600' }}>{test2}</td>
-                          {!isHM && <td style={{ textAlign: 'center', padding: '8px', color: '#e2e8f0', fontWeight: '600' }}>{proj}</td>}
-                          <td style={{ textAlign: 'center', padding: '8px', color: '#e2e8f0', fontWeight: '600' }}>{exam}</td>
-                          <td style={{ textAlign: 'center', padding: '8px', fontWeight: 'bold', color: '#fff' }}>{sub.totalScore}%</td>
-                          {showCumulative && <td style={{ textAlign: 'center', padding: '8px', color: '#c084fc', fontWeight: 'bold' }}>{sub.broughtForward || 0}%</td>}
-                          {showCumulative && <td style={{ textAlign: 'center', padding: '8px', color: '#38bdf8', fontWeight: 'bold' }}>{sub.averageScore || sub.totalScore}%</td>}
-                          <td style={{ textAlign: 'center', padding: '8px', fontWeight: 'bold', color: '#34d399' }}>
-                            {getGrade(finalScore, isHM)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* THIRD TERM PROMOTION CONTROL BOX */}
-            {term.toLowerCase().includes('third') && (
-              <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid rgba(168, 85, 247, 0.4)', marginBottom: '20px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                  <GraduationCap size={16} /> THIRD-TERM ACADEMIC PROMOTION DECISION
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-                  <div>
-                    <label style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>DECISION</label>
-                    <select value={promotionDecision} onChange={(e) => setPromotionDecision(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', marginTop: '4px', outline: 'none' }}>
-                      <option value="PROMOTED">PROMOTED</option>
-                      <option value="REPEAT">REPEAT CLASS</option>
-                      <option value="WITHDRAWN">ADVISED TO WITHDRAW</option>
-                    </select>
+              {/* REJECTION / RETURN NOTICE BANNER */}
+              {(activeStudent.rejectionReason || singleReview.review?.rejectionReason) && (
+                <div style={{ padding: '12px 16px', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', marginBottom: '16px', color: '#f87171', fontSize: '12px' }}>
+                  <div style={{ fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    <AlertTriangle size={14} /> RETURNED BY ADMIN FOR REVISION:
                   </div>
-                  {promotionDecision === 'PROMOTED' && (
-                    <div>
-                      <label style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>TARGET CLASS</label>
-                      <input type="text" value={promotedToClass} onChange={(e) => setPromotedToClass(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', marginTop: '4px', outline: 'none' }} />
-                    </div>
+                  <div style={{ fontStyle: 'italic', color: '#fca5a5' }}>
+                    "{activeStudent.rejectionReason || singleReview.review?.rejectionReason}"
+                  </div>
+                </div>
+              )}
+
+              {/* STUDENT HEADER CARD */}
+              <div className="exec-header-grid" style={{ backgroundColor: '#030712', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b', marginBottom: '20px' }}>
+                <div style={{ width: '90px', height: '100px', borderRadius: '8px', backgroundColor: '#1e293b', overflow: 'hidden', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                  {headerPhotoUrl ? (
+                    <img src={headerPhotoUrl} alt="passport" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '30px', fontWeight: 'bold', color: '#38bdf8' }}>{getStudentFullName(currentStudentMeta)[0]}</span>
                   )}
                 </div>
-              </div>
-            )}
 
-            {/* DOMAINS GRID */}
-            <div className="exec-domains-grid" style={{ marginBottom: '20px' }}>
-              <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b' }}>
-                <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#c084fc', textTransform: 'uppercase' }}>CHARACTER DEVELOPMENT</h5>
-                {Object.entries(singleReview.review?.characterDevelopment || {}).map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', margin: '4px 0', color: '#94a3b8' }}>
-                    <span style={{ textTransform: 'capitalize' }}>{k.replace(/([A-Z])/g, ' $1')}</span>
-                    <strong style={{ color: '#34d399' }}>{v} - {RATING_LABELS[v] || 'Good'}</strong>
+                <div>
+                  <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '900', color: '#fff' }}>
+                    {getStudentFullName(currentStudentMeta)}
+                  </h2>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span>Admission No: <strong style={{ color: '#fff', fontFamily: 'monospace' }}>{currentStudentMeta?.admissionNo || 'N/A'}</strong></span>
+                    <span>Class: <strong style={{ color: '#fff' }}>{selectedClass}</strong> • Campus: <strong style={{ color: '#c084fc' }}>{activeCampus}</strong></span>
+                    <span>Term: <strong style={{ color: '#38bdf8' }}>{term}</strong> • Session: <strong style={{ color: '#38bdf8' }}>{session}</strong></span>
                   </div>
-                ))}
+                </div>
+
+                <div style={{ backgroundColor: '#0b1329', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>OVERALL TERM AVG: <strong style={{ color: '#38bdf8' }}>{singleReview.overallAverage}%</strong></span>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>SUBJECTS ENTERED: <strong style={{ color: '#fff' }}>{singleReview.subjectCount || singleReview.subjects?.length || 0}</strong></span>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>STATUS: <strong style={{ color: '#facc15' }}>{singleReview.review?.status || statusFilter}</strong></span>
+                </div>
               </div>
 
-              <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b' }}>
-                <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#c084fc', textTransform: 'uppercase' }}>PRACTICAL SKILLS</h5>
-                {Object.entries(singleReview.review?.practicalSkills || {}).map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', margin: '4px 0', color: '#94a3b8' }}>
-                    <span style={{ textTransform: 'capitalize' }}>{k}</span>
-                    <strong style={{ color: '#34d399' }}>{v} - {RATING_LABELS[v] || 'Good'}</strong>
+              {/* SUBJECTS & SCORES TABLE WITH FULL TOUCH SCROLL */}
+              <div style={{ marginBottom: '20px' }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase' }}>SUBJECTS & SCORES</h4>
+                <div className="table-scroll-container">
+                  <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '11px' }}>
+                        <th style={{ padding: '8px' }}>SUBJECT</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>TEST 1</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>TEST 2</th>
+                        {!isHM && <th style={{ padding: '8px', textAlign: 'center' }}>PROJ</th>}
+                        <th style={{ padding: '8px', textAlign: 'center' }}>EXAM</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>{showCumulative ? 'TOTAL (100) A' : 'TOTAL (100)'}</th>
+                        {showCumulative && <th style={{ padding: '8px', textAlign: 'center', color: '#c084fc' }}>CUM B.F (100) B</th>}
+                        {showCumulative && <th style={{ padding: '8px', textAlign: 'center', color: '#38bdf8' }}>TOTAL AVG (A+B)/2</th>}
+                        <th style={{ padding: '8px', textAlign: 'center' }}>GRADE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {singleReview.subjects?.map((sub, i) => {
+                        const test1 = sub.ca1 ?? sub.test1 ?? sub.ca1Score ?? 0;
+                        const test2 = sub.ca2 ?? sub.test2 ?? sub.ca2Score ?? 0;
+                        const proj = sub.project ?? sub.proj ?? sub.projectScore ?? 0;
+                        const exam = sub.exam ?? sub.examScore ?? 0;
+                        const finalScore = showCumulative ? (sub.averageScore || sub.totalScore) : sub.totalScore;
+
+                        return (
+                          <tr key={i} style={{ borderBottom: '1px solid #1e293b' }}>
+                            <td style={{ padding: '8px', fontWeight: '600', color: '#fff' }}>{sub.subject}</td>
+                            <td style={{ textAlign: 'center', padding: '8px', color: '#e2e8f0', fontWeight: '600' }}>{test1}</td>
+                            <td style={{ textAlign: 'center', padding: '8px', color: '#e2e8f0', fontWeight: '600' }}>{test2}</td>
+                            {!isHM && <td style={{ textAlign: 'center', padding: '8px', color: '#e2e8f0', fontWeight: '600' }}>{proj}</td>}
+                            <td style={{ textAlign: 'center', padding: '8px', color: '#e2e8f0', fontWeight: '600' }}>{exam}</td>
+                            <td style={{ textAlign: 'center', padding: '8px', fontWeight: 'bold', color: '#fff' }}>{sub.totalScore}%</td>
+                            {showCumulative && <td style={{ textAlign: 'center', padding: '8px', color: '#c084fc', fontWeight: 'bold' }}>{sub.broughtForward || 0}%</td>}
+                            {showCumulative && <td style={{ textAlign: 'center', padding: '8px', color: '#38bdf8', fontWeight: 'bold' }}>{sub.averageScore || sub.totalScore}%</td>}
+                            <td style={{ textAlign: 'center', padding: '8px', fontWeight: 'bold', color: '#34d399' }}>
+                              {getGrade(finalScore, isHM)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* THIRD TERM PROMOTION CONTROL BOX */}
+              {term.toLowerCase().includes('third') && (
+                <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid rgba(168, 85, 247, 0.4)', marginBottom: '20px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                    <GraduationCap size={16} /> THIRD-TERM ACADEMIC PROMOTION DECISION
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>DECISION</label>
+                      <select value={promotionDecision} onChange={(e) => setPromotionDecision(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' }}>
+                        <option value="PROMOTED">PROMOTED</option>
+                        <option value="REPEAT">REPEAT CLASS</option>
+                        <option value="WITHDRAWN">ADVISED TO WITHDRAW</option>
+                      </select>
+                    </div>
+                    {promotionDecision === 'PROMOTED' && (
+                      <div>
+                        <label style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>TARGET CLASS</label>
+                        <input type="text" value={promotedToClass} onChange={(e) => setPromotedToClass(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                    )}
                   </div>
-                ))}
+                </div>
+              )}
+
+              {/* DOMAINS GRID */}
+              <div className="exec-domains-grid" style={{ marginBottom: '20px' }}>
+                <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b' }}>
+                  <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#c084fc', textTransform: 'uppercase' }}>CHARACTER DEVELOPMENT</h5>
+                  {Object.entries(singleReview.review?.characterDevelopment || {}).map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', margin: '4px 0', color: '#94a3b8' }}>
+                      <span style={{ textTransform: 'capitalize' }}>{k.replace(/([A-Z])/g, ' $1')}</span>
+                      <strong style={{ color: '#34d399' }}>{v} - {RATING_LABELS[v] || 'Good'}</strong>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b' }}>
+                  <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#c084fc', textTransform: 'uppercase' }}>PRACTICAL SKILLS</h5>
+                  {Object.entries(singleReview.review?.practicalSkills || {}).map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', margin: '4px 0', color: '#94a3b8' }}>
+                      <span style={{ textTransform: 'capitalize' }}>{k}</span>
+                      <strong style={{ color: '#34d399' }}>{v} - {RATING_LABELS[v] || 'Good'}</strong>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* CLASS TEACHER'S REMARK BLOCK */}
-            <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b', marginBottom: '20px' }}>
-              <span style={{ fontSize: '11px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                CLASS TEACHER'S REMARK
-              </span>
-              <p style={{ margin: 0, fontSize: '12px', color: '#fff', fontStyle: 'italic', lineHeight: '1.4' }}>
-                "{singleReview.review?.teacherRemark || 'No teacher remark recorded yet.'}"
-              </p>
-            </div>
-
-            {/* EXECUTIVE COMMENT & ACTIONS */}
-            <div style={{ backgroundColor: '#030712', padding: '16px', borderRadius: '8px', border: '1px solid #1e293b' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#34d399', textTransform: 'uppercase' }}>
-                  {isHM ? "HEADMASTER'S COMMENT" : "PRINCIPAL'S COMMENT"}
+              {/* CLASS TEACHER'S REMARK BLOCK */}
+              <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b', marginBottom: '20px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  CLASS TEACHER'S REMARK
                 </span>
-                <button onClick={handleApprove} style={{ padding: '4px 10px', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid #10b981', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
-                  Save Comment
-                </button>
+                <p style={{ margin: 0, fontSize: '12px', color: '#fff', fontStyle: 'italic', lineHeight: '1.4' }}>
+                  "{singleReview.review?.teacherRemark || 'No teacher remark recorded yet.'}"
+                </p>
               </div>
 
-              <textarea 
-                value={principalRemark} 
-                onChange={(e) => setPrincipalRemark(e.target.value)} 
-                rows={3} 
-                placeholder="Write your official comment about this student's performance..." 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', resize: 'none', boxSizing: 'border-box', marginBottom: '16px', outline: 'none' }} 
-              />
+              {/* EXECUTIVE COMMENT & ACTIONS */}
+              <div style={{ backgroundColor: '#030712', padding: '16px', borderRadius: '8px', border: '1px solid #1e293b' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#34d399', textTransform: 'uppercase' }}>
+                    {isHM ? "HEADMASTER'S COMMENT" : "PRINCIPAL'S COMMENT"}
+                  </span>
+                  <button onClick={handleApprove} style={{ padding: '4px 10px', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid #10b981', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                    Save Comment
+                  </button>
+                </div>
 
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button onClick={() => setShowRejectModal(true)} style={{ padding: '10px 16px', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid #ef4444', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
-                  Return to Teacher
-                </button>
-                
-                <button onClick={handleApprove} style={{ flex: 1, padding: '10px 16px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                  <Check size={16} /> Approve & Forward to Admin
-                </button>
+                <textarea 
+                  value={principalRemark} 
+                  onChange={(e) => setPrincipalRemark(e.target.value)} 
+                  rows={3} 
+                  placeholder="Write your official comment about this student's performance..." 
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', resize: 'none', boxSizing: 'border-box', marginBottom: '16px', outline: 'none' }} 
+                />
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button onClick={() => setShowRejectModal(true)} style={{ padding: '10px 16px', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid #ef4444', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
+                    Return to Teacher
+                  </button>
+                  
+                  <button onClick={handleApprove} style={{ flex: 1, padding: '10px 16px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <Check size={16} /> Approve & Forward to Admin
+                  </button>
+                </div>
               </div>
+
             </div>
-
-          </div>
-        ) : (
-          <div style={{ backgroundColor: '#0b1329', padding: '40px', borderRadius: '12px', border: '1px solid #1e293b', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
-            Select a student from the roster list on the left to inspect their complete report card.
-          </div>
-        )}
+          ) : (
+            <div style={{ backgroundColor: '#0b1329', padding: '40px 20px', borderRadius: '12px', border: '1px solid #1e293b', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+              Select a student from the roster list to inspect their complete report card.
+            </div>
+          )}
+        </div>
 
       </div>
 
       {/* REJECTION MODAL */}
       {showRejectModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ backgroundColor: '#0b1329', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '380px', border: '1px solid #1e293b' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ backgroundColor: '#0b1329', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '380px', border: '1px solid #1e293b', boxSizing: 'border-box' }}>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#f87171' }}>Return Result to Class Teacher</h3>
             <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#94a3b8' }}>Specify reason for returning broadsheet:</p>
             <textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} rows={3} placeholder="e.g. Please revise CA2 score..." style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#030712', color: '#fff', fontSize: '12px', marginBottom: '12px', boxSizing: 'border-box' }} />
