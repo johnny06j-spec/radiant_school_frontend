@@ -306,24 +306,26 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
   const headerPhotoUrl = getStudentPhotoUrl(currentStudentMeta);
 
   return (
-    <div style={{ padding: '10px 0', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#f8fafc', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: '10px 0', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#f8fafc', width: '100%', maxWidth: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
       <style>{`
         .exec-grid-container {
           display: grid;
-          grid-template-columns: ${activeStudent ? '320px 1fr' : '1fr'};
-          gap: 20px;
+          grid-template-columns: ${activeStudent ? '300px 1fr' : '1fr'};
+          gap: 16px;
           align-items: start;
+          width: 100%;
+          box-sizing: border-box;
         }
         .exec-header-grid {
           display: grid;
-          grid-template-columns: 100px 1fr 180px;
-          gap: 16px;
+          grid-template-columns: 90px 1fr 180px;
+          gap: 12px;
           align-items: center;
         }
         .exec-domains-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 16px;
+          gap: 12px;
         }
         .table-scroll-container {
           width: 100%;
@@ -331,16 +333,19 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
           -webkit-overflow-scrolling: touch;
         }
         
-        /* 📱 RESPONSIVE MOBILE ADJUSTMENTS */
+        /* 📱 RESPONSIVE MOBILE FIXES */
         @media (max-width: 900px) {
           .exec-grid-container {
             grid-template-columns: 1fr !important;
+            display: block !important;
           }
           .exec-roster-column {
             display: ${activeStudent ? 'none' : 'block'} !important;
+            width: 100% !important;
           }
           .exec-review-column {
             display: ${activeStudent ? 'block' : 'none'} !important;
+            width: 100% !important;
           }
           .exec-header-grid {
             grid-template-columns: 1fr !important;
@@ -349,18 +354,18 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
           .exec-domains-grid {
             grid-template-columns: 1fr !important;
           }
-          .mobile-sticky-top {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background-color: #0b1329;
-            padding-bottom: 8px;
+          .mobile-action-buttons {
+            flex-direction: column !important;
+            width: 100% !important;
+          }
+          .mobile-action-buttons button {
+            width: 100% !important;
           }
         }
       `}</style>
 
       {/* LOCKED FILTER CONTROL BAR */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', backgroundColor: '#0b1329', padding: '14px', borderRadius: '12px', border: '1px solid #1e293b', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', backgroundColor: '#0b1329', padding: '12px', borderRadius: '12px', border: '1px solid #1e293b', marginBottom: '16px', width: '100%', boxSizing: 'border-box' }}>
         <div>
           <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Lock size={10} /> TERM
@@ -411,7 +416,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
       <div className="exec-grid-container">
         
         {/* LEFT COLUMN: ROSTER QUEUE */}
-        <div className="exec-roster-column" style={{ backgroundColor: '#0b1329', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b' }}>
+        <div className="exec-roster-column" style={{ backgroundColor: '#0b1329', padding: '14px', borderRadius: '12px', border: '1px solid #1e293b', boxSizing: 'border-box' }}>
           <div style={{ marginBottom: '12px' }}>
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#fff' }}>
               Students Awaiting Review ({students.length})
@@ -475,17 +480,17 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
         </div>
 
         {/* RIGHT COLUMN: REPORT CARD REVIEW PANEL */}
-        <div className="exec-review-column" style={{ width: '100%' }}>
+        <div className="exec-review-column" style={{ width: '100%', boxSizing: 'border-box' }}>
           {activeStudent && singleReview ? (
-            <div style={{ backgroundColor: '#0b1329', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b', boxSizing: 'border-box' }}>
+            <div style={{ backgroundColor: '#0b1329', padding: '14px', borderRadius: '12px', border: '1px solid #1e293b', boxSizing: 'border-box', width: '100%' }}>
               
-              {/* MOBILE STICKY TOP BAR WITH RETURN BUTTON */}
-              <div className="mobile-sticky-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #1e293b', paddingBottom: '12px' }}>
+              {/* TOP NAVIGATION BAR */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #1e293b', paddingBottom: '10px' }}>
                 <button 
                   onClick={() => { setActiveStudent(null); setSingleReview(null); }} 
                   style={{ background: '#1e293b', border: '1px solid #334155', color: '#38bdf8', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 'bold' }}
                 >
-                  <ArrowLeft size={16} /> Select Different Student
+                  <ArrowLeft size={16} /> Back to Student Roster
                 </button>
                 <span style={{ color: '#94a3b8', fontSize: '11px', fontFamily: 'monospace' }}>
                   {currentStudentMeta?.admissionNo}
@@ -494,7 +499,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
 
               {/* REJECTION / RETURN NOTICE BANNER */}
               {(activeStudent.rejectionReason || singleReview.review?.rejectionReason) && (
-                <div style={{ padding: '12px 16px', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', marginBottom: '16px', color: '#f87171', fontSize: '12px' }}>
+                <div style={{ padding: '12px 14px', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', marginBottom: '14px', color: '#f87171', fontSize: '12px' }}>
                   <div style={{ fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                     <AlertTriangle size={14} /> RETURNED BY ADMIN FOR REVISION:
                   </div>
@@ -505,12 +510,12 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
               )}
 
               {/* STUDENT HEADER CARD */}
-              <div className="exec-header-grid" style={{ backgroundColor: '#030712', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b', marginBottom: '20px' }}>
-                <div style={{ width: '90px', height: '100px', borderRadius: '8px', backgroundColor: '#1e293b', overflow: 'hidden', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+              <div className="exec-header-grid" style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '10px', border: '1px solid #1e293b', marginBottom: '16px', boxSizing: 'border-box' }}>
+                <div style={{ width: '80px', height: '90px', borderRadius: '8px', backgroundColor: '#1e293b', overflow: 'hidden', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
                   {headerPhotoUrl ? (
                     <img src={headerPhotoUrl} alt="passport" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <span style={{ fontSize: '30px', fontWeight: 'bold', color: '#38bdf8' }}>{getStudentFullName(currentStudentMeta)[0]}</span>
+                    <span style={{ fontSize: '28px', fontWeight: 'bold', color: '#38bdf8' }}>{getStudentFullName(currentStudentMeta)[0]}</span>
                   )}
                 </div>
 
@@ -525,18 +530,18 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: '#0b1329', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ backgroundColor: '#0b1329', padding: '10px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span style={{ fontSize: '11px', color: '#64748b' }}>OVERALL TERM AVG: <strong style={{ color: '#38bdf8' }}>{singleReview.overallAverage}%</strong></span>
                   <span style={{ fontSize: '11px', color: '#64748b' }}>SUBJECTS ENTERED: <strong style={{ color: '#fff' }}>{singleReview.subjectCount || singleReview.subjects?.length || 0}</strong></span>
                   <span style={{ fontSize: '11px', color: '#64748b' }}>STATUS: <strong style={{ color: '#facc15' }}>{singleReview.review?.status || statusFilter}</strong></span>
                 </div>
               </div>
 
-              {/* SUBJECTS & SCORES TABLE WITH FULL TOUCH SCROLL */}
-              <div style={{ marginBottom: '20px' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase' }}>SUBJECTS & SCORES</h4>
+              {/* SUBJECTS & SCORES TABLE WITH HORIZONTAL TOUCH SCROLL */}
+              <div style={{ marginBottom: '16px', width: '100%', overflow: 'hidden' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase' }}>SUBJECTS & SCORES</h4>
                 <div className="table-scroll-container">
-                  <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+                  <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '11px' }}>
                         <th style={{ padding: '8px' }}>SUBJECT</th>
@@ -581,11 +586,11 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
 
               {/* THIRD TERM PROMOTION CONTROL BOX */}
               {term.toLowerCase().includes('third') && (
-                <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid rgba(168, 85, 247, 0.4)', marginBottom: '20px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                <div style={{ backgroundColor: '#030712', padding: '12px', borderRadius: '8px', border: '1px solid rgba(168, 85, 247, 0.4)', marginBottom: '16px', boxSizing: 'border-box' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                     <GraduationCap size={16} /> THIRD-TERM ACADEMIC PROMOTION DECISION
                   </span>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
                     <div>
                       <label style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>DECISION</label>
                       <select value={promotionDecision} onChange={(e) => setPromotionDecision(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' }}>
@@ -605,9 +610,9 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
               )}
 
               {/* DOMAINS GRID */}
-              <div className="exec-domains-grid" style={{ marginBottom: '20px' }}>
-                <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b' }}>
-                  <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#c084fc', textTransform: 'uppercase' }}>CHARACTER DEVELOPMENT</h5>
+              <div className="exec-domains-grid" style={{ marginBottom: '16px' }}>
+                <div style={{ backgroundColor: '#030712', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', boxSizing: 'border-box' }}>
+                  <h5 style={{ margin: '0 0 6px 0', fontSize: '11px', color: '#c084fc', textTransform: 'uppercase' }}>CHARACTER DEVELOPMENT</h5>
                   {Object.entries(singleReview.review?.characterDevelopment || {}).map(([k, v]) => (
                     <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', margin: '4px 0', color: '#94a3b8' }}>
                       <span style={{ textTransform: 'capitalize' }}>{k.replace(/([A-Z])/g, ' $1')}</span>
@@ -616,8 +621,8 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
                   ))}
                 </div>
 
-                <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b' }}>
-                  <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#c084fc', textTransform: 'uppercase' }}>PRACTICAL SKILLS</h5>
+                <div style={{ backgroundColor: '#030712', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', boxSizing: 'border-box' }}>
+                  <h5 style={{ margin: '0 0 6px 0', fontSize: '11px', color: '#c084fc', textTransform: 'uppercase' }}>PRACTICAL SKILLS</h5>
                   {Object.entries(singleReview.review?.practicalSkills || {}).map(([k, v]) => (
                     <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', margin: '4px 0', color: '#94a3b8' }}>
                       <span style={{ textTransform: 'capitalize' }}>{k}</span>
@@ -628,7 +633,7 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
               </div>
 
               {/* CLASS TEACHER'S REMARK BLOCK */}
-              <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b', marginBottom: '20px' }}>
+              <div style={{ backgroundColor: '#030712', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', marginBottom: '16px', boxSizing: 'border-box' }}>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   CLASS TEACHER'S REMARK
                 </span>
@@ -637,8 +642,8 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
                 </p>
               </div>
 
-              {/* EXECUTIVE COMMENT & ACTIONS */}
-              <div style={{ backgroundColor: '#030712', padding: '16px', borderRadius: '8px', border: '1px solid #1e293b' }}>
+              {/* EXECUTIVE COMMENT & RESPONSIVE ACTION BUTTONS */}
+              <div style={{ backgroundColor: '#030712', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: '800', color: '#34d399', textTransform: 'uppercase' }}>
                     {isHM ? "HEADMASTER'S COMMENT" : "PRINCIPAL'S COMMENT"}
@@ -653,15 +658,15 @@ const ExecutiveReviewDesk = ({ currentUser }) => {
                   onChange={(e) => setPrincipalRemark(e.target.value)} 
                   rows={3} 
                   placeholder="Write your official comment about this student's performance..." 
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', resize: 'none', boxSizing: 'border-box', marginBottom: '16px', outline: 'none' }} 
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: '#0b1329', color: '#fff', fontSize: '12px', resize: 'none', boxSizing: 'border-box', marginBottom: '12px', outline: 'none' }} 
                 />
 
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <button onClick={() => setShowRejectModal(true)} style={{ padding: '10px 16px', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid #ef4444', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
+                <div className="mobile-action-buttons" style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => setShowRejectModal(true)} style={{ padding: '10px 16px', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid #ef4444', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}>
                     Return to Teacher
                   </button>
                   
-                  <button onClick={handleApprove} style={{ flex: 1, padding: '10px 16px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <button onClick={handleApprove} style={{ flex: 1, padding: '10px 16px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', textAlign: 'center' }}>
                     <Check size={16} /> Approve & Forward to Admin
                   </button>
                 </div>
