@@ -1,14 +1,21 @@
 // src/pages/SystemSettings.jsx
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, AlertCircle, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Settings, Save, AlertCircle, CheckCircle2, AlertTriangle, Key, ShieldCheck } from 'lucide-react';
 import API from '../api/axiosInstance';
 
 const SystemSettings = () => {
+  // Academic Settings State
   const [session, setSession] = useState('2026/2027');
   const [term, setTerm] = useState('First Term');
   const [initialSession, setInitialSession] = useState('2026/2027');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+
+  // Security Credentials State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [securityLoading, setSecurityLoading] = useState(false);
+  const [securityMessage, setSecurityMessage] = useState({ type: '', text: '' });
 
   const sessionOptions = ['2025/2026', '2026/2027', '2027/2028', '2028/2029'];
   const termOptions = ['First Term', 'Second Term', 'Third Term'];
@@ -34,6 +41,7 @@ const SystemSettings = () => {
 
   const isSessionChanging = initialSession && session !== initialSession;
 
+  // Handle Academic Config Updates
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -55,6 +63,32 @@ const SystemSettings = () => {
       setMessage({ type: 'error', text: errorMsg });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Security Password Updates
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    setSecurityLoading(true);
+    setSecurityMessage({ type: '', text: '' });
+
+    try {
+      const { data } = await API.put('/auth/update-password', {
+        currentPassword,
+        newPassword,
+      });
+
+      const successMsg = data?.message || 'Password updated successfully!';
+      setSecurityMessage({ type: 'success', text: successMsg });
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err) {
+      const errorMsg =
+        err.response?.data?.message ||
+        'Failed to update security credentials. Check current password.';
+      setSecurityMessage({ type: 'error', text: errorMsg });
+    } finally {
+      setSecurityLoading(false);
     }
   };
 
@@ -91,6 +125,7 @@ const SystemSettings = () => {
       borderRadius: '12px',
       padding: '2rem',
       boxShadow: 'var(--shadow-subtle)',
+      marginBottom: '2rem',
     },
     formGroup: {
       marginBottom: '1.5rem',
@@ -116,6 +151,19 @@ const SystemSettings = () => {
       fontWeight: '600',
       outline: 'none',
       cursor: 'pointer',
+      boxSizing: 'border-box',
+      transition: 'border-color 0.2s',
+    },
+    input: {
+      width: '100%',
+      padding: '0.85rem 1rem',
+      background: 'var(--bg-input)',
+      border: '1px solid var(--border-color)',
+      borderRadius: '8px',
+      color: 'var(--text-primary)',
+      fontSize: '14px',
+      fontWeight: '600',
+      outline: 'none',
       boxSizing: 'border-box',
       transition: 'border-color 0.2s',
     },
@@ -149,6 +197,23 @@ const SystemSettings = () => {
       marginTop: '1.5rem',
       transition: 'all 0.2s ease',
     },
+    securityButton: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.5rem',
+      width: '100%',
+      padding: '0.85rem',
+      background: '#2563eb',
+      color: '#ffffff',
+      border: 'none',
+      borderRadius: '8px',
+      fontWeight: '700',
+      fontSize: '14px',
+      cursor: 'pointer',
+      marginTop: '1.5rem',
+      transition: 'all 0.2s ease',
+    },
     alert: {
       display: 'flex',
       alignItems: 'center',
@@ -166,12 +231,17 @@ const SystemSettings = () => {
       <header style={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '4px' }}>
           <Settings size={22} style={{ color: '#9333ea' }} />
-          <h1 style={styles.title}>Academic Settings</h1>
+          <h1 style={styles.title}>System Settings</h1>
         </div>
-        <p style={styles.subtitle}>Configure the active system-wide dynamic academic timeline configurations.</p>
+        <p style={styles.subtitle}>Configure dynamic academic timelines and administrative credentials.</p>
       </header>
 
+      {/* CARD 1: Academic Settings */}
       <div style={styles.card}>
+        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+          Academic Settings
+        </h2>
+
         {message.text && (
           <div
             style={{
@@ -248,6 +318,81 @@ const SystemSettings = () => {
           >
             <Save size={18} />
             {loading ? 'Executing Academic Rollover...' : 'Save Configuration'}
+          </button>
+        </form>
+      </div>
+
+      {/* CARD 2: Security & Admin Credentials */}
+      <div style={styles.card}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <Key size={20} style={{ color: '#2563eb' }} />
+          <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+            Security & Credentials
+          </h2>
+        </div>
+        <p style={{ ...styles.subtitle, marginBottom: '1.5rem' }}>
+          Update your administrative portal account security key.
+        </p>
+
+        {securityMessage.text && (
+          <div
+            style={{
+              ...styles.alert,
+              background:
+                securityMessage.type === 'success'
+                  ? 'rgba(34, 197, 94, 0.1)'
+                  : 'rgba(239, 68, 68, 0.1)',
+              border:
+                securityMessage.type === 'success'
+                  ? '1px solid rgba(34, 197, 94, 0.25)'
+                  : '1px solid rgba(239, 68, 68, 0.25)',
+              color:
+                securityMessage.type === 'success'
+                  ? 'var(--accent-success)'
+                  : 'var(--accent-danger)',
+            }}
+          >
+            {securityMessage.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+            {securityMessage.text}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordUpdate}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Current Password</label>
+            <input
+              type="password"
+              placeholder="Enter current password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              style={styles.input}
+              required
+            />
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>New Private Password</label>
+            <input
+              type="password"
+              placeholder="Enter new strong password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              style={styles.input}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={securityLoading}
+            style={{
+              ...styles.securityButton,
+              opacity: securityLoading ? 0.7 : 1,
+              transform: securityLoading ? 'scale(0.98)' : 'scale(1)',
+            }}
+          >
+            <ShieldCheck size={18} />
+            {securityLoading ? 'Updating Credentials...' : 'Update Password'}
           </button>
         </form>
       </div>
