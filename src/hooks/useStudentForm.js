@@ -62,6 +62,15 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
     }
   }, [resolvedCampus, isEditMode]);
 
+  // Clean memory leaks from preview object URLs
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   // Safely handle going back without changing location.state mid-flight
   const handleBackToDirectory = () => {
     if (typeof setActiveTab === "function") {
@@ -179,7 +188,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
       dataContainer.append("admissionTerm", termVal);
       dataContainer.append("campus", targetCampus);
 
-      // Exclude campus & custom keys here to prevent duplicate form fields
+      // Exclude special handling keys to prevent duplicates
       const excludedKeys = [
         "campus",
         "assignedClass", 
@@ -191,7 +200,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
 
       Object.keys(formData).forEach((key) => {
         if (!excludedKeys.includes(key)) {
-          dataContainer.append(key, formData[key]);
+          dataContainer.append(key, formData[key] || "");
         }
       });
 
