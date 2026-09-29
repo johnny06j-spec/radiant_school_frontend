@@ -17,6 +17,10 @@ const MyBiodataSheet = ({ studentData, isMobile, styles }) => {
     `${studentData.surname || studentData.lastName || ''} ${studentData.firstName || ''} ${studentData.otherName || ''}`.trim() || 
     "Active Student";
 
+  // Address Fallback Resolution
+  const residentialAddress = studentData.address || studentData.residentialAddress || studentData.homeAddress || "N/A";
+  const guardianAddress = studentData.guardianAddress || studentData.parentAddress || residentialAddress;
+
   // Intake Context Resolution
   const intakeSession = studentData.intakeSession || studentData.admissionSession || studentData.admittedSession || "N/A";
   const intakeTerm = studentData.intakeTerm || studentData.admissionTerm || studentData.admittedTerm || "First Term";
@@ -52,7 +56,7 @@ const MyBiodataSheet = ({ studentData, isMobile, styles }) => {
         { label: "Local Government Area", value: studentData.lga || "Not Specified", icon: MapPin },
         { label: "Home Town / Place of Birth", value: studentData.homeTown || studentData.placeOfBirth || "N/A", icon: MapPin },
         { label: "Blood / Genotype", value: `${studentData.bloodGroup || 'N/A'} / ${studentData.genotype || 'N/A'}`, icon: Heart, highlight: "#ef4444" },
-        { label: "Residential Address", value: studentData.address || "N/A", icon: MapPin }
+        { label: "Residential Address", value: residentialAddress, icon: MapPin }
       ]
     },
     {
@@ -62,7 +66,7 @@ const MyBiodataSheet = ({ studentData, isMobile, styles }) => {
         { label: "Father's Phone", value: studentData.fatherPhone || "N/A", icon: Phone },
         { label: "Mother's Name", value: studentData.motherName || "N/A", icon: User },
         { label: "Mother's Phone", value: studentData.motherPhone || "N/A", icon: Phone },
-        { label: "Guardian Residential Address", value: studentData.guardianAddress || studentData.address || "N/A", icon: MapPin }
+        { label: "Guardian Residential Address", value: guardianAddress, icon: MapPin }
       ]
     }
   ];
