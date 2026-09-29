@@ -93,6 +93,7 @@ const StaffRegistry = ({ selectedCampus = 'All Campuses' }) => {
         'Physics',
         'Economics',
         'Animal Husbandry',
+        'Agriculture',
         'Civic Education',
         'Government',
         'Literature',
