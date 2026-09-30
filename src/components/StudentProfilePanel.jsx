@@ -22,9 +22,12 @@ const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodata
   const intakeTerm = selectedStudent.intakeTerm || selectedStudent.admittedTerm || selectedStudent.admissionTerm || "First Term";
   const campusName = selectedStudent.campus || "Emerald Campus";
 
-  // Safe Address Fallback Resolutions
-  const residentialAddress = selectedStudent.address || selectedStudent.residentialAddress || selectedStudent.homeAddress || "N/A";
-  const guardianAddress = selectedStudent.guardianAddress || selectedStudent.address || selectedStudent.residentialAddress || "N/A";
+  // Safe Address Fallback Resolutions (Handles empty strings and nulls cleanly)
+  const rawAddress = (selectedStudent.address || selectedStudent.residentialAddress || selectedStudent.homeAddress || "").trim();
+  const rawGuardianAddress = (selectedStudent.guardianAddress || rawAddress).trim();
+
+  const residentialAddress = rawAddress || "N/A";
+  const guardianAddress = rawGuardianAddress || "N/A";
 
   return (
     <div style={styles.rightWrapperCard}>
