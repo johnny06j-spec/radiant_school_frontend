@@ -1,6 +1,6 @@
 // src/components/StudentProfilePanel.jsx
 import React from "react";
-import { User, Download, Printer, Building2 } from "lucide-react";
+import { User, Download, Printer } from "lucide-react";
 import InstitutionLogo from "../assets/Logo.jpg";
 
 const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodataSheet, styles }) => {
@@ -21,6 +21,10 @@ const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodata
   const intakeSession = selectedStudent.intakeSession || selectedStudent.admittedSession || selectedStudent.admissionSession || "N/A";
   const intakeTerm = selectedStudent.intakeTerm || selectedStudent.admittedTerm || selectedStudent.admissionTerm || "First Term";
   const campusName = selectedStudent.campus || "Emerald Campus";
+
+  // Safe Address Fallback Resolutions
+  const residentialAddress = selectedStudent.address || selectedStudent.residentialAddress || selectedStudent.homeAddress || "N/A";
+  const guardianAddress = selectedStudent.guardianAddress || selectedStudent.address || selectedStudent.residentialAddress || "N/A";
 
   return (
     <div style={styles.rightWrapperCard}>
@@ -125,7 +129,7 @@ const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodata
         
         <div style={{ padding: "6px 0", fontSize: "11px" }}>
           <span style={styles.dataLabel}>Residential Address: </span>
-          <span style={{ fontWeight: "700", color: "#0f172a" }}>{selectedStudent.address || "N/A"}</span>
+          <span style={{ fontWeight: "700", color: "#0f172a" }}>{residentialAddress}</span>
         </div>
 
         <div style={styles.sectionHeader}>B. Academic Information</div>
@@ -179,7 +183,7 @@ const StudentProfilePanel = ({ selectedStudent, downloadBiodataPDF, printBiodata
         </div>
         <div style={{ padding: "6px 0", fontSize: "11px" }}>
           <span style={styles.dataLabel}>Guardian Address: </span>
-          <span style={{ fontWeight: "700", color: "#0f172a" }}>{selectedStudent.guardianAddress || "N/A"}</span>
+          <span style={{ fontWeight: "700", color: "#0f172a" }}>{guardianAddress}</span>
         </div>
       </div>
     </div>
