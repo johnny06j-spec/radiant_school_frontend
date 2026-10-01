@@ -96,6 +96,9 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
             const sessionVal = data.intakeSession || data.admittedSession || data.admissionSession || "2026/2027";
             const termVal = data.intakeTerm || data.admittedTerm || data.admissionTerm || "First Term";
 
+            const resolvedAddr = data.address || data.residentialAddress || "";
+            const resolvedGuardianAddr = data.guardianAddress || resolvedAddr;
+
             setFormData({
               surname: data.surname || "",
               firstName: data.firstName || "",
@@ -117,12 +120,12 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
               homeTown: data.homeTown || data.placeOfBirth || "",
               email: data.email || "",
               phone: data.phone || data.phoneNumber || "",
-              address: data.address || data.residentialAddress || "",
+              address: resolvedAddr,
               fatherName: data.fatherName || "",
               fatherPhone: data.fatherPhone || "",
               motherName: data.motherName || "",
               motherPhone: data.motherPhone || "",
-              guardianAddress: data.guardianAddress || ""
+              guardianAddress: resolvedGuardianAddr
             });
 
             if (data.passportPhoto) setImagePreview(data.passportPhoto);
@@ -179,6 +182,7 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
       const termVal = formData.intakeTerm || formData.admittedTerm || "First Term";
       const targetCampus = formData.campus || resolvedCampus;
 
+      // Primary System Allocations
       dataContainer.append("currentClass", formData.assignedClass);
       dataContainer.append("intakeSession", sessionVal);
       dataContainer.append("admittedSession", sessionVal);
@@ -188,14 +192,25 @@ export const useStudentForm = (setActiveTab, explicitStudentId, defaultCampus = 
       dataContainer.append("admissionTerm", termVal);
       dataContainer.append("campus", targetCampus);
 
-      // Exclude special handling keys to prevent duplicates
+      // 🚨 EXPLICIT ADDRESS BINDINGS TO ENSURE PAYLOAD SERIALIZATION
+      const safeAddress = (formData.address || "").trim();
+      const safeGuardianAddress = (formData.guardianAddress || safeAddress).trim();
+
+      dataContainer.append("address", safeAddress);
+      dataContainer.append("residentialAddress", safeAddress);
+      dataContainer.append("guardianAddress", safeGuardianAddress);
+
+      // Exclude key duplicates handled manually above
       const excludedKeys = [
         "campus",
         "assignedClass", 
         "intakeSession", 
         "admittedSession", 
         "intakeTerm", 
-        "admittedTerm"
+        "admittedTerm",
+        "address",
+        "residentialAddress",
+        "guardianAddress"
       ];
 
       Object.keys(formData).forEach((key) => {
