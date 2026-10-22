@@ -42,7 +42,9 @@ const StaffRegistry = ({ selectedCampus = 'All Campuses' }) => {
         'Creative Art',
         'Music',
         'Poem',
-        'Handwriting'
+        'Handwriting',
+        'Yoruba',
+        'French',
       ];
     }
 
@@ -61,7 +63,10 @@ const StaffRegistry = ({ selectedCampus = 'All Campuses' }) => {
         'Physical & Health Education',
         'Digital Literacy',
         'Verbal Reasoning',
-        'Quantitative Reasoning'
+        'Quantitative Reasoning',
+        'Yoruba',
+        'Handwriting',
+        'French',
       ];
     }
 
@@ -79,6 +84,8 @@ const StaffRegistry = ({ selectedCampus = 'All Campuses' }) => {
         'Nigerian History',
         'Christian Religious Studies (C.R.S)',
         'Creative Art',
+        'National Value',
+        'Garment Making',
         'Yoruba'
       ];
     }
