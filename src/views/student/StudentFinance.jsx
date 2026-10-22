@@ -161,9 +161,12 @@ const StudentFinance = ({ studentId }) => {
       if (data?.success && data?.reference) {
         sessionStorage.setItem('pending_paystack_ref', data.reference);
 
+        // 🚨 EXPLICIT FALLBACK PUBLIC KEY RESOLUTION
+        const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_live_773221625601ab28384fdf34a61cb6804872b08';
+
         // 2. Trigger Paystack Pop-up directly on page
         const handler = window.PaystackPop?.setup({
-          key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_live_773221625601ab28384fdf34a61cb6804872b08',
+          key: paystackPublicKey,
           email: profile?.email || profile?.user?.email,
           amount: Math.round(amountToPay * 100),
           ref: data.reference,
