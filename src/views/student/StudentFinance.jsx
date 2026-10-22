@@ -23,23 +23,11 @@ const StudentFinance = ({ studentId }) => {
     'Third Term': true,
   });
 
-  // 🟢 LOAD PAYSTACK INLINE SCRIPT dynamically
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
-
   // 🟢 FETCH PROFILE & LEDGER FOR THE ACTIVE STUDENT ID
   const fetchProfileData = useCallback(async () => {
     setLoading(true);
     try {
+      // 1. Fetch Targeted Student Profile (or fallback to /me)
       const profileEndpoint = studentId
         ? `/students/profile/me?studentId=${studentId}`
         : '/students/profile/me';
@@ -55,6 +43,7 @@ const StudentFinance = ({ studentId }) => {
         const currentSession = studentObj.academicSession || '2026/2027';
         const currentTerm = studentObj.academicTerm || 'First Term';
 
+        // 2. Fetch Targeted Student Ledger Statement
         const ledgerRes = await API.get(
           `/finance/student-ledger/${activeStudentId}?term=${encodeURIComponent(
             currentTerm
@@ -65,6 +54,7 @@ const StudentFinance = ({ studentId }) => {
         if (ledgerJson?.success && ledgerJson?.data) {
           setLedgerData(ledgerJson.data);
 
+          // Auto-fill checkout input field with active total outstanding debt
           const totalDebt = ledgerJson.data.totalOutstanding || 0;
           setCustomPayAmount(totalDebt > 0 ? totalDebt.toString() : '');
         }
@@ -76,156 +66,48 @@ const StudentFinance = ({ studentId }) => {
     }
   }, [studentId]);
 
-  // 🟢 VERIFY PAYMENT WITH SERVER
-  const verifyReference = useCallback(async (reference) => {
-    if (!reference) return;
-    setVerifying(true);
-    try {
-      const { data } = await API.get(`/finance/paystack/verify/${reference}`);
-      if (data?.success) {
-        setVerifiedPaidAmount(data.verifiedAmount || 0);
-        setVerificationSuccess(true);
-        sessionStorage.removeItem('pending_paystack_ref');
-
-        setTimeout(() => {
-          setVerificationSuccess(false);
-          const currentPath = window.location.pathname;
-          const cleanUrl = studentId ? `${currentPath}?studentId=${studentId}` : currentPath;
-
-          window.history.replaceState({}, document.title, cleanUrl);
-          fetchProfileData();
-        }, 3000);
-      } else {
-        sessionStorage.removeItem('pending_paystack_ref');
-        fetchProfileData();
-      }
-    } catch (error) {
-      console.error('Error verifying payment reference:', error);
-      sessionStorage.removeItem('pending_paystack_ref');
-      fetchProfileData();
-    } finally {
-      setVerifying(false);
-    }
-  }, [studentId, fetchProfileData]);
-
-  // 🟢 INITIAL FETCH & FOCUS LISTENER RE-VERIFICATION
+  // 🟢 RE-RUN WHEN STUDENT ID OR PAYMENT VERIFICATION CHANGES
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    const reference = queryParams.get('reference') || queryParams.get('trxref') || sessionStorage.getItem('pending_paystack_ref');
+    const reference = queryParams.get('reference') || queryParams.get('trxref');
 
     if (reference) {
-      verifyReference(reference);
+      const runPaymentVerification = async () => {
+        setVerifying(true);
+        try {
+          const { data } = await API.get(`/finance/paystack/verify/${reference}`);
+          if (data?.success) {
+            setVerifiedPaidAmount(data.verifiedAmount || 0);
+            setVerificationSuccess(true);
+
+            setTimeout(() => {
+              setVerificationSuccess(false);
+              // Clean query parameters while maintaining studentId context
+              const currentPath = window.location.pathname;
+              const activeId = studentId || profile?._id;
+              const cleanUrl = activeId ? `${currentPath}?studentId=${activeId}` : currentPath;
+
+              window.history.replaceState({}, document.title, cleanUrl);
+              fetchProfileData();
+            }, 3500);
+          } else {
+            alert(data.message || 'Payment verification failed.');
+          }
+        } catch (error) {
+          console.error('Error verifying payment reference:', error);
+          alert('Failed to confirm your payment with our servers.');
+        } finally {
+          setVerifying(false);
+        }
+      };
+
+      runPaymentVerification();
     } else {
       fetchProfileData();
     }
+  }, [fetchProfileData, studentId, profile?._id]);
 
-    const handleWindowFocus = () => {
-      const pendingRef = sessionStorage.getItem('pending_paystack_ref');
-      if (pendingRef) {
-        verifyReference(pendingRef);
-      } else {
-        fetchProfileData();
-      }
-    };
-
-    window.addEventListener('focus', handleWindowFocus);
-    return () => {
-      window.removeEventListener('focus', handleWindowFocus);
-    };
-  }, [studentId, fetchProfileData, verifyReference]);
-
-  const totalOutstandingBalance =
-    ledgerData?.totalOutstanding ?? profile?.financialSummary?.totalOutstanding ?? 0;
-
-  const remainingBalanceAfterPayment = useMemo(() => {
-    const entered = parseFloat(customPayAmount) || 0;
-    return Math.max(0, totalOutstandingBalance - entered);
-  }, [customPayAmount, totalOutstandingBalance]);
-
-  // 🟢 PAYSTACK INLINE CHECKOUT HANDLER
-  const handleGatewayCheckout = async () => {
-    const amountToPay = Number(customPayAmount || 0);
-
-    if (amountToPay < 100) {
-      alert('Minimum payment amount is ₦100.00.');
-      return;
-    }
-
-    setPaying(true);
-    try {
-      const activeId = profile?._id || studentId;
-
-      const { data } = await API.post('/finance/paystack/initialize', {
-        studentId: activeId,
-        amount: amountToPay,
-        term: profile?.academicTerm || 'First Term',
-        session: profile?.academicSession || '2026/2027',
-        paymentType: 'term_fees'
-      });
-
-      if (data?.success && data?.reference) {
-        sessionStorage.setItem('pending_paystack_ref', data.reference);
-
-        const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_live_773221625601ab28384fdf34a61cb6804872b08';
-
-        const handler = window.PaystackPop?.setup({
-          key: paystackPublicKey,
-          email: profile?.email || profile?.user?.email,
-          amount: Math.round(amountToPay * 100),
-          ref: data.reference,
-          onClose: () => {
-            setPaying(false);
-            verifyReference(data.reference);
-          },
-          callback: (response) => {
-            setPaying(false);
-            verifyReference(response.reference);
-          }
-        });
-
-        if (handler) {
-          handler.openIframe();
-        } else {
-          window.location.href = data.authorization_url;
-        }
-      } else {
-        alert(data.message || 'Failed to contact Paystack checkout gateway.');
-        setPaying(false);
-      }
-    } catch (error) {
-      console.error('Payment submission failure:', error);
-      alert('Failed to process checkout transaction.');
-      setPaying(false);
-    }
-  };
-
-  const handleDownloadReceipt = async (reference) => {
-    setDownloadingRef(reference);
-    try {
-      const response = await API.get(`/finance/receipt/${reference}`, {
-        responseType: 'blob',
-      });
-
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Receipt-${reference}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (error) {
-      console.error('Receipt engine processing failure:', error);
-      alert('Failed to compile dynamic school document summary.');
-    } finally {
-      setDownloadingRef(null);
-    }
-  };
-
-  const toggleAccordion = (id) => {
-    setOpenAccordions((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
+  // DYNAMICALLY RENDER ALL UNPAID TERMS WITH CLEAN CONSOLIDATED ITEMS
   const outstandingGroups = useMemo(() => {
     if (!profile || !ledgerData) return [];
 
@@ -233,6 +115,7 @@ const StudentFinance = ({ studentId }) => {
     const academicSession = profile.academicSession || '2026/2027';
     const currentTermTitle = profile.academicTerm || 'First Term';
 
+    // 1. Map Historical / Previous Outstanding Debt (if applicable)
     if (ledgerData.previousOutstanding > 0) {
       const prevKey = 'Previous Outstanding Debt';
       groupsMap[prevKey] = {
@@ -251,6 +134,7 @@ const StudentFinance = ({ studentId }) => {
       };
     }
 
+    // 2. Map Active Target Term Clean Consolidated Fee Items
     if (ledgerData.items && ledgerData.items.length > 0) {
       groupsMap[currentTermTitle] = {
         id: currentTermTitle,
@@ -269,6 +153,7 @@ const StudentFinance = ({ studentId }) => {
     return Object.values(groupsMap);
   }, [profile, ledgerData]);
 
+  // 🟢 DYNAMIC PAYMENTS HISTORY LEDGER WITH FULL BACKWARD FALLBACK
   const pastPaymentsHistoryList = useMemo(() => {
     if (ledgerData?.paymentHistory && ledgerData.paymentHistory.length > 0) {
       return ledgerData.paymentHistory;
@@ -279,6 +164,77 @@ const StudentFinance = ({ studentId }) => {
     return [];
   }, [ledgerData, profile]);
 
+  const toggleAccordion = (id) => {
+    setOpenAccordions((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const totalOutstandingBalance =
+    ledgerData?.totalOutstanding ?? profile?.financialSummary?.totalOutstanding ?? 0;
+
+  const remainingBalanceAfterPayment = useMemo(() => {
+    const entered = parseFloat(customPayAmount) || 0;
+    return Math.max(0, totalOutstandingBalance - entered);
+  }, [customPayAmount, totalOutstandingBalance]);
+
+  const handleGatewayCheckout = async () => {
+    const amountToPay = Number(customPayAmount || 0);
+
+    if (amountToPay < 100) {
+      alert('Minimum payment amount is ₦100.00.');
+      return;
+    }
+
+    setPaying(true);
+    try {
+      const activeId = profile?._id || studentId;
+      const callbackUrl = `${window.location.origin}${window.location.pathname}?studentId=${activeId}`;
+
+      const { data } = await API.post('/finance/paystack/initialize', {
+        studentId: activeId,
+        amount: amountToPay,
+        term: profile?.academicTerm || 'First Term',
+        session: profile?.academicSession || '2026/2027',
+        paymentType: 'term_fees',
+        callbackUrl,
+      });
+
+      if (data?.success && data?.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        alert(data.message || 'Failed to contact Paystack checkout gateway.');
+      }
+    } catch (error) {
+      console.error('Payment submission failure:', error);
+      alert('Failed to process checkout transaction.');
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  // 📥 RECEIPT DOWNLOAD INTERCEPTOR
+  const handleDownloadReceipt = async (reference) => {
+    setDownloadingRef(reference);
+    try {
+      const response = await API.get(`/finance/receipt/${reference}`, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Receipt-${reference}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error('💥 Receipt engine processing failure:', error);
+      alert('Failed to compile dynamic school document summary.');
+    } finally {
+      setDownloadingRef(null);
+    }
+  };
+
   if (verifying) {
     return (
       <div style={styles.loadingWrapper}>
@@ -286,6 +242,9 @@ const StudentFinance = ({ studentId }) => {
         <span style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)' }}>
           Securing payment validation receipt from Paystack...
         </span>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+          Please do not close this window or hit refresh.
+        </p>
       </div>
     );
   }
