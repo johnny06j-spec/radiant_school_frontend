@@ -44,7 +44,7 @@ const StaffRegistry = ({ selectedCampus = 'All Campuses' }) => {
         'Poem',
         'Handwriting',
         'Yoruba',
-        'French',
+        'French'
       ];
     }
 
@@ -66,7 +66,7 @@ const StaffRegistry = ({ selectedCampus = 'All Campuses' }) => {
         'Quantitative Reasoning',
         'Yoruba',
         'Handwriting',
-        'French',
+        'French'
       ];
     }
 
