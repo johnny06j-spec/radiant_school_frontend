@@ -27,6 +27,7 @@ const StudentFinance = ({ studentId }) => {
   const fetchProfileData = useCallback(async () => {
     setLoading(true);
     try {
+      // 1. Fetch Targeted Student Profile (or fallback to /me)
       const profileEndpoint = studentId
         ? `/students/profile/me?studentId=${studentId}`
         : '/students/profile/me';
@@ -42,6 +43,7 @@ const StudentFinance = ({ studentId }) => {
         const currentSession = studentObj.academicSession || '2026/2027';
         const currentTerm = studentObj.academicTerm || 'First Term';
 
+        // 2. Fetch Targeted Student Ledger Statement
         const ledgerRes = await API.get(
           `/finance/student-ledger/${activeStudentId}?term=${encodeURIComponent(
             currentTerm
@@ -52,6 +54,7 @@ const StudentFinance = ({ studentId }) => {
         if (ledgerJson?.success && ledgerJson?.data) {
           setLedgerData(ledgerJson.data);
 
+          // Auto-fill checkout input field with active total outstanding debt
           const totalDebt = ledgerJson.data.totalOutstanding || 0;
           setCustomPayAmount(totalDebt > 0 ? totalDebt.toString() : '');
         }
@@ -63,60 +66,46 @@ const StudentFinance = ({ studentId }) => {
     }
   }, [studentId]);
 
-  // 🟢 HELPER: VERIFY REFERENCE WITH BACKEND API
-  const verifyReference = useCallback(async (reference) => {
-    if (!reference) return;
-    setVerifying(true);
-    try {
-      const { data } = await API.get(`/finance/paystack/verify/${reference}`);
-      if (data?.success) {
-        setVerifiedPaidAmount(data.verifiedAmount || 0);
-        setVerificationSuccess(true);
-        sessionStorage.removeItem('pending_paystack_ref');
-
-        setTimeout(() => {
-          setVerificationSuccess(false);
-          const currentPath = window.location.pathname;
-          const activeId = studentId || profile?._id;
-          const cleanUrl = activeId ? `${currentPath}?studentId=${activeId}` : currentPath;
-
-          window.history.replaceState({}, document.title, cleanUrl);
-          fetchProfileData();
-        }, 3500);
-      }
-    } catch (error) {
-      console.error('Error verifying payment reference:', error);
-    } finally {
-      setVerifying(false);
-    }
-  }, [studentId, profile?._id, fetchProfileData]);
-
-  // 🟢 RE-RUN WHEN STUDENT ID, URL REFERENCE, OR WINDOW FOCUS OCCURS
+  // 🟢 RE-RUN WHEN STUDENT ID OR PAYMENT VERIFICATION CHANGES
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    const reference = queryParams.get('reference') || queryParams.get('trxref') || sessionStorage.getItem('pending_paystack_ref');
+    const reference = queryParams.get('reference') || queryParams.get('trxref');
 
     if (reference) {
-      verifyReference(reference);
+      const runPaymentVerification = async () => {
+        setVerifying(true);
+        try {
+          const { data } = await API.get(`/finance/paystack/verify/${reference}`);
+          if (data?.success) {
+            setVerifiedPaidAmount(data.verifiedAmount || 0);
+            setVerificationSuccess(true);
+
+            setTimeout(() => {
+              setVerificationSuccess(false);
+              // Clean query parameters while maintaining studentId context
+              const currentPath = window.location.pathname;
+              const activeId = studentId || profile?._id;
+              const cleanUrl = activeId ? `${currentPath}?studentId=${activeId}` : currentPath;
+
+              window.history.replaceState({}, document.title, cleanUrl);
+              fetchProfileData();
+            }, 3500);
+          } else {
+            alert(data.message || 'Payment verification failed.');
+          }
+        } catch (error) {
+          console.error('Error verifying payment reference:', error);
+          alert('Failed to confirm your payment with our servers.');
+        } finally {
+          setVerifying(false);
+        }
+      };
+
+      runPaymentVerification();
     } else {
       fetchProfileData();
     }
-
-    // Window Focus Listener for App-Switching (e.g. returning from OPay)
-    const handleWindowFocus = () => {
-      const pendingRef = sessionStorage.getItem('pending_paystack_ref');
-      if (pendingRef) {
-        verifyReference(pendingRef);
-      } else {
-        fetchProfileData();
-      }
-    };
-
-    window.addEventListener('focus', handleWindowFocus);
-    return () => {
-      window.removeEventListener('focus', handleWindowFocus);
-    };
-  }, [fetchProfileData, verifyReference]);
+  }, [fetchProfileData, studentId, profile?._id]);
 
   // DYNAMICALLY RENDER ALL UNPAID TERMS WITH CLEAN CONSOLIDATED ITEMS
   const outstandingGroups = useMemo(() => {
@@ -126,6 +115,7 @@ const StudentFinance = ({ studentId }) => {
     const academicSession = profile.academicSession || '2026/2027';
     const currentTermTitle = profile.academicTerm || 'First Term';
 
+    // 1. Map Historical / Previous Outstanding Debt (if applicable)
     if (ledgerData.previousOutstanding > 0) {
       const prevKey = 'Previous Outstanding Debt';
       groupsMap[prevKey] = {
@@ -144,6 +134,7 @@ const StudentFinance = ({ studentId }) => {
       };
     }
 
+    // 2. Map Active Target Term Clean Consolidated Fee Items
     if (ledgerData.items && ledgerData.items.length > 0) {
       groupsMap[currentTermTitle] = {
         id: currentTermTitle,
@@ -162,6 +153,7 @@ const StudentFinance = ({ studentId }) => {
     return Object.values(groupsMap);
   }, [profile, ledgerData]);
 
+  // 🟢 DYNAMIC PAYMENTS HISTORY LEDGER WITH FULL BACKWARD FALLBACK
   const pastPaymentsHistoryList = useMemo(() => {
     if (ledgerData?.paymentHistory && ledgerData.paymentHistory.length > 0) {
       return ledgerData.paymentHistory;
@@ -207,9 +199,6 @@ const StudentFinance = ({ studentId }) => {
       });
 
       if (data?.success && data?.authorization_url) {
-        if (data?.reference) {
-          sessionStorage.setItem('pending_paystack_ref', data.reference);
-        }
         window.location.href = data.authorization_url;
       } else {
         alert(data.message || 'Failed to contact Paystack checkout gateway.');
@@ -222,6 +211,7 @@ const StudentFinance = ({ studentId }) => {
     }
   };
 
+  // 📥 RECEIPT DOWNLOAD INTERCEPTOR
   const handleDownloadReceipt = async (reference) => {
     setDownloadingRef(reference);
     try {
@@ -238,7 +228,7 @@ const StudentFinance = ({ studentId }) => {
       link.click();
       link.parentNode.removeChild(link);
     } catch (error) {
-      console.error('Receipt engine processing failure:', error);
+      console.error('💥 Receipt engine processing failure:', error);
       alert('Failed to compile dynamic school document summary.');
     } finally {
       setDownloadingRef(null);
