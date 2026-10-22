@@ -30,7 +30,9 @@ const StudentFinance = ({ studentId }) => {
     script.async = true;
     document.body.appendChild(script);
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
@@ -88,19 +90,23 @@ const StudentFinance = ({ studentId }) => {
         setTimeout(() => {
           setVerificationSuccess(false);
           const currentPath = window.location.pathname;
-          const activeId = studentId || profile?._id;
-          const cleanUrl = activeId ? `${currentPath}?studentId=${activeId}` : currentPath;
+          const cleanUrl = studentId ? `${currentPath}?studentId=${studentId}` : currentPath;
 
           window.history.replaceState({}, document.title, cleanUrl);
           fetchProfileData();
         }, 3000);
+      } else {
+        sessionStorage.removeItem('pending_paystack_ref');
+        fetchProfileData();
       }
     } catch (error) {
       console.error('Error verifying payment reference:', error);
+      sessionStorage.removeItem('pending_paystack_ref');
+      fetchProfileData();
     } finally {
       setVerifying(false);
     }
-  }, [studentId, profile?._id, fetchProfileData]);
+  }, [studentId, fetchProfileData]);
 
   // 🟢 INITIAL FETCH & FOCUS LISTENER RE-VERIFICATION
   useEffect(() => {
@@ -126,7 +132,7 @@ const StudentFinance = ({ studentId }) => {
     return () => {
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [fetchProfileData, verifyReference]);
+  }, [studentId, fetchProfileData, verifyReference]);
 
   const totalOutstandingBalance =
     ledgerData?.totalOutstanding ?? profile?.financialSummary?.totalOutstanding ?? 0;
@@ -149,7 +155,6 @@ const StudentFinance = ({ studentId }) => {
     try {
       const activeId = profile?._id || studentId;
 
-      // 1. Initialize backend payload to receive reference and dynamic subaccount allocation
       const { data } = await API.post('/finance/paystack/initialize', {
         studentId: activeId,
         amount: amountToPay,
@@ -161,10 +166,8 @@ const StudentFinance = ({ studentId }) => {
       if (data?.success && data?.reference) {
         sessionStorage.setItem('pending_paystack_ref', data.reference);
 
-        // 🚨 EXPLICIT FALLBACK PUBLIC KEY RESOLUTION
         const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_live_773221625601ab28384fdf34a61cb6804872b08';
 
-        // 2. Trigger Paystack Pop-up directly on page
         const handler = window.PaystackPop?.setup({
           key: paystackPublicKey,
           email: profile?.email || profile?.user?.email,
@@ -172,7 +175,6 @@ const StudentFinance = ({ studentId }) => {
           ref: data.reference,
           onClose: () => {
             setPaying(false);
-            // Verify reference in case user transferred money before closing pop-up
             verifyReference(data.reference);
           },
           callback: (response) => {
@@ -184,7 +186,6 @@ const StudentFinance = ({ studentId }) => {
         if (handler) {
           handler.openIframe();
         } else {
-          // Fallback to URL redirect if PaystackPop script hasn't loaded yet
           window.location.href = data.authorization_url;
         }
       } else {
