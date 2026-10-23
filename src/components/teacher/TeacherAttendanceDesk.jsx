@@ -1,23 +1,22 @@
 // src/components/teacher/TeacherAttendanceDesk.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle, Clock, XCircle, FileText, Save, 
-  Eye, FileSpreadsheet, CheckCheck, Lock, AlertCircle, Download
-} from 'lucide-react';
+import { Lock } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import axiosInstance from '../../api/axiosInstance';
+
+import AttendanceTakeDesk from './AttendanceTakeDesk';
+import AttendanceReportDesk from './AttendanceReportDesk';
 
 export default function TeacherAttendanceDesk({ currentUser }) {
   const [activeTab, setActiveTab] = useState('take-attendance');
   
-  // 🟢 Dynamic assigned class resolution with 'N/A' fallback safeguard
-  const rawAssigned = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0];
-  const userAssignedClass = (!rawAssigned || rawAssigned === 'N/A') ? 'Nursery 2' : rawAssigned;
+  // 🟢 Class resolution prioritizing classTeacherOf for Secondary
+  const rawClass = currentUser?.classTeacherOf || currentUser?.assignedClass || currentUser?.assignedClasses?.[0];
+  const userAssignedClass = (!rawClass || rawClass === 'N/A') ? 'JSS 3' : rawClass;
 
   const [className, setClassName] = useState(userAssignedClass);
   const [sessionPeriod, setSessionPeriod] = useState('Morning');
   
-  // Separate date states for taking attendance vs generating reports
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
   
@@ -32,7 +31,6 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   const [isNotClassTeacher, setIsNotClassTeacher] = useState(false);
   const [showBroadsheet, setShowBroadsheet] = useState(false);
 
-  // Helper function to derive Monday and Friday bounds + 5 daily ISO dates
   const getWeekBounds = (dateStr) => {
     const d = new Date(dateStr);
     const day = d.getDay();
@@ -45,7 +43,6 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     const formatShort = (dt) => `${dt.getDate()} ${dt.toLocaleString('en-US', { month: 'short' })}`;
     const formatFull = (dt) => `${dt.getDate()} ${dt.toLocaleString('en-US', { month: 'short' })} ${dt.getFullYear()}`;
 
-    // Generate individual day labels & ISO dates (MON 14/09, TUE 15/09, etc.)
     const weekDays = [0, 1, 2, 3, 4].map(i => {
       const dayDate = new Date(monday);
       dayDate.setDate(monday.getDate() + i);
@@ -68,12 +65,11 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   const currentTakeWeek = getWeekBounds(attendanceDate);
   const currentReportWeek = getWeekBounds(reportDate);
 
-  // Sync className when currentUser prop resolves/updates (ignoring 'N/A')
   useEffect(() => {
     if (currentUser) {
-      const assigned = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0];
-      if (assigned && assigned !== 'N/A') {
-        setClassName(assigned);
+      const resolved = currentUser?.classTeacherOf || currentUser?.assignedClass || currentUser?.assignedClasses?.[0];
+      if (resolved && resolved !== 'N/A') {
+        setClassName(resolved);
       }
     }
   }, [currentUser]);
@@ -191,7 +187,6 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     }
   };
 
-  // 📄 DOWNLOAD PDF BROADSHEET FUNCTION
   const handleDownloadPDF = () => {
     const element = document.getElementById('attendance-broadsheet-content');
     if (!element) return;
@@ -219,25 +214,6 @@ export default function TeacherAttendanceDesk({ currentUser }) {
       });
   };
 
-  const getStatusSymbol = (status) => {
-    switch (status) {
-      case 'Present': return 'P';
-      case 'Late': return 'L';
-      case 'Absent': return 'A';
-      case 'Excused': return 'E';
-      default: return '-';
-    }
-  };
-
-  const metrics = {
-    present: students.filter(s => s.status === 'Present').length,
-    late: students.filter(s => s.status === 'Late').length,
-    absent: students.filter(s => s.status === 'Absent').length,
-    excused: students.filter(s => s.status === 'Excused').length,
-    unmarked: students.filter(s => !s.status).length
-  };
-
-  // 🔒 RESTRICTED LOCK VIEW FOR UNASSIGNED TEACHERS
   if (isNotClassTeacher) {
     return (
       <div style={{ padding: '16px', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
@@ -265,8 +241,6 @@ export default function TeacherAttendanceDesk({ currentUser }) {
       </div>
     );
   }
-
-  const activeWeekBounds = activeReportWeek || currentReportWeek;
 
   return (
     <div style={{ padding: '12px', color: '#fff', fontFamily: 'system-ui, sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
@@ -301,332 +275,40 @@ export default function TeacherAttendanceDesk({ currentUser }) {
       </div>
 
       {activeTab === 'take-attendance' ? (
-        <>
-          {/* CONTROL SELECTORS */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-            <div style={{ background: '#0f172a', padding: '12px 14px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-              <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>CLASS</span>
-              <div style={{ fontWeight: 'bold', fontSize: '14px', marginTop: '2px', color: '#38bdf8' }}>{className}</div>
-            </div>
-
-            <div style={{ background: '#0f172a', padding: '12px 14px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-              <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>SESSION PERIOD</span>
-              <select 
-                value={sessionPeriod} 
-                onChange={e => setSessionPeriod(e.target.value)}
-                style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontWeight: 'bold', outline: 'none', marginTop: '2px', cursor: 'pointer' }}
-              >
-                <option value="Morning" style={{ background: '#0f172a' }}>Morning Period</option>
-                <option value="Afternoon" style={{ background: '#0f172a' }}>Afternoon Period</option>
-              </select>
-            </div>
-
-            <div style={{ background: '#0f172a', padding: '12px 14px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-              <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>ATTENDANCE DATE</span>
-              <input 
-                type="date" 
-                value={attendanceDate}
-                onChange={e => setAttendanceDate(e.target.value)}
-                style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontWeight: 'bold', outline: 'none', marginTop: '2px' }}
-              />
-            </div>
-          </div>
-
-          {/* COUNTER CARDS */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px', marginBottom: '20px' }}>
-            <div style={{ background: '#052e16', border: '1px solid #15803d', padding: '10px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <CheckCircle size={20} color="#22c55e" />
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: '#22c55e' }}>{metrics.present}</div>
-                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#86efac', textTransform: 'uppercase' }}>Present</div>
-              </div>
-            </div>
-
-            <div style={{ background: '#451a03', border: '1px solid #b45309', padding: '10px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={20} color="#f59e0b" />
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: '#f59e0b' }}>{metrics.late}</div>
-                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#fde68a', textTransform: 'uppercase' }}>Late</div>
-              </div>
-            </div>
-
-            <div style={{ background: '#450a0a', border: '1px solid #b91c1c', padding: '10px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <XCircle size={20} color="#ef4444" />
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: '#ef4444' }}>{metrics.absent}</div>
-                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#fca5a5', textTransform: 'uppercase' }}>Absent</div>
-              </div>
-            </div>
-
-            <div style={{ background: '#172554', border: '1px solid #1d4ed8', padding: '10px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileText size={20} color="#3b82f6" />
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: '#3b82f6' }}>{metrics.excused}</div>
-                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#93c5fd', textTransform: 'uppercase' }}>Excused</div>
-              </div>
-            </div>
-
-            <div style={{ background: '#1e293b', border: '1px solid #475569', padding: '10px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertCircle size={20} color="#94a3b8" />
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: '#94a3b8' }}>{metrics.unmarked}</div>
-                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#cbd5e1', textTransform: 'uppercase' }}>Unmarked</div>
-              </div>
-            </div>
-          </div>
-
-          {/* TABLE CONTAINER */}
-          <div style={{ background: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b' }}>
-            <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>Student Attendance</h3>
-              <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '360px' }}>
-                <button 
-                  onClick={markAllPresent} 
-                  style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', color: '#38bdf8', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-                >
-                  <CheckCheck size={14} /> Mark All
-                </button>
-                <button 
-                  onClick={handleSaveAttendance} 
-                  disabled={saving}
-                  style={{ flex: 1, background: '#2563eb', border: 'none', color: '#fff', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-                >
-                  <Save size={14} /> {saving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </div>
-
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
-                <thead>
-                  <tr style={{ color: '#64748b', borderBottom: '1px solid #1e293b', fontSize: '11px' }}>
-                    <th style={{ padding: '8px' }}>#</th>
-                    <th style={{ padding: '8px' }}>STUDENT NAME</th>
-                    <th style={{ padding: '8px' }}>REG. NO</th>
-                    <th style={{ padding: '8px' }}>STATUS</th>
-                    <th style={{ padding: '8px' }}>REMARK</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((st, idx) => (
-                    <tr key={st.studentId || idx} style={{ borderBottom: '1px solid #1e293b' }}>
-                      <td style={{ padding: '10px 8px', color: '#64748b' }}>{idx + 1}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 'bold' }}>{st.name}</td>
-                      <td style={{ padding: '10px 8px', color: '#38bdf8', fontFamily: 'monospace' }}>{st.admissionNo}</td>
-                      <td style={{ padding: '10px 8px' }}>
-                        <select 
-                          value={st.status || ''} 
-                          onChange={e => handleStatusChange(idx, e.target.value)}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            fontWeight: 'bold',
-                            fontSize: '11px',
-                            background: st.status === 'Present' ? 'rgba(34,197,94,0.15)' : st.status === 'Late' ? 'rgba(245,158,11,0.15)' : st.status === 'Absent' ? 'rgba(239,68,68,0.15)' : st.status === 'Excused' ? 'rgba(59,130,246,0.15)' : '#1e293b',
-                            color: st.status === 'Present' ? '#22c55e' : st.status === 'Late' ? '#f59e0b' : st.status === 'Absent' ? '#ef4444' : st.status === 'Excused' ? '#3b82f6' : '#94a3b8',
-                            border: 'none',
-                            outline: 'none'
-                          }}
-                        >
-                          <option value="" style={{ background: '#0f172a', color: '#94a3b8' }}>-- Select --</option>
-                          <option value="Present" style={{ background: '#0f172a', color: '#22c55e' }}>● Present</option>
-                          <option value="Late" style={{ background: '#0f172a', color: '#f59e0b' }}>● Late</option>
-                          <option value="Absent" style={{ background: '#0f172a', color: '#ef4444' }}>● Absent</option>
-                          <option value="Excused" style={{ background: '#0f172a', color: '#3b82f6' }}>● Excused</option>
-                        </select>
-                      </td>
-                      <td style={{ padding: '10px 8px' }}>
-                        <input 
-                          type="text" 
-                          value={st.remark || ''}
-                          placeholder="Add note..."
-                          onChange={e => handleRemarkChange(idx, e.target.value)}
-                          style={{ background: '#020617', border: '1px solid #1e293b', padding: '6px 8px', borderRadius: '6px', color: '#fff', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
+        <AttendanceTakeDesk
+          className={className}
+          sessionPeriod={sessionPeriod}
+          setSessionPeriod={setSessionPeriod}
+          attendanceDate={attendanceDate}
+          setAttendanceDate={setAttendanceDate}
+          students={students}
+          handleStatusChange={handleStatusChange}
+          handleRemarkChange={handleRemarkChange}
+          markAllPresent={markAllPresent}
+          handleSaveAttendance={handleSaveAttendance}
+          saving={saving}
+        />
       ) : (
-        /* REPORTS TAB */
-        <div style={{ background: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'end', marginBottom: '20px' }}>
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>CLASS</label>
-              <select value={className} onChange={e => setClassName(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px' }}>
-                <option value={className}>{className}</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>REGISTER PERIOD</label>
-              <select value={sessionPeriod} onChange={e => setSessionPeriod(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px' }}>
-                <option value="Morning">Morning Period</option>
-                <option value="Afternoon">Afternoon Period</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>SELECT DATE</label>
-              <input 
-                type="date" 
-                value={reportDate} 
-                onChange={e => setReportDate(e.target.value)} 
-                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px', fontWeight: 'bold' }} 
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b' }}>WEEK RANGE</label>
-              <input type="text" value={currentReportWeek.shortRange} readOnly style={{ width: '100%', padding: '8px', borderRadius: '6px', background: '#020617', color: '#fff', border: '1px solid #1e293b', marginTop: '4px', fontWeight: 'bold', opacity: 0.8 }} />
-            </div>
-            <button 
-              onClick={handleGenerateReport} 
-              style={{ width: '100%', background: '#2563eb', border: 'none', color: '#fff', padding: '9px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            >
-              <FileSpreadsheet size={16} /> Generate Report
-            </button>
-          </div>
-
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '14px' }}>Recent Reports</h4>
-          
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
-              <thead>
-                <tr style={{ color: '#64748b', borderBottom: '1px solid #1e293b', fontSize: '10px' }}>
-                  <th style={{ padding: '8px' }}>DATE RANGE</th>
-                  <th style={{ padding: '8px' }}>CLASS</th>
-                  <th style={{ padding: '8px' }}>SESSION</th>
-                  <th style={{ padding: '8px' }}>GENERATED ON</th>
-                  <th style={{ padding: '8px', textAlign: 'right' }}>ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentReportsList.length === 0 ? (
-                  <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                    <td style={{ padding: '10px 8px', fontWeight: 'bold' }}>{currentReportWeek.shortRange}</td>
-                    <td style={{ padding: '10px 8px' }}>{className}</td>
-                    <td style={{ padding: '10px 8px', color: '#38bdf8' }}>{sessionPeriod}</td>
-                    <td style={{ padding: '10px 8px', color: '#94a3b8' }}>Current Selected Week</td>
-                    <td style={{ padding: '10px 8px', textAlign: 'right' }}>
-                      <button onClick={handleGenerateReport} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginRight: '4px' }}>Download</button>
-                      <button onClick={handleGenerateReport} style={{ background: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={12} /></button>
-                    </td>
-                  </tr>
-                ) : (
-                  recentReportsList.map(item => (
-                    <tr key={item.id} style={{ borderBottom: '1px solid #1e293b' }}>
-                      <td style={{ padding: '10px 8px', fontWeight: 'bold' }}>{item.dateRange}</td>
-                      <td style={{ padding: '10px 8px' }}>{item.className}</td>
-                      <td style={{ padding: '10px 8px', color: '#38bdf8' }}>{item.sessionPeriod}</td>
-                      <td style={{ padding: '10px 8px', color: '#94a3b8' }}>{item.generatedOn}</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right' }}>
-                        <button onClick={() => handleOpenSavedReport(item)} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginRight: '4px' }}>Download</button>
-                        <button onClick={() => handleOpenSavedReport(item)} style={{ background: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={12} /></button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* PRINTABLE & DOWNLOADABLE BROADSHEET MODAL */}
-      {showBroadsheet && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '12px' }}>
-          <div style={{ background: '#ffffff', color: '#000', width: '100%', maxWidth: '850px', padding: '20px 16px', borderRadius: '8px', maxHeight: '92vh', overflowY: 'auto', fontFamily: 'sans-serif' }}>
-            
-            <div id="attendance-broadsheet-content" style={{ background: '#ffffff', color: '#000', padding: '10px' }}>
-              <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '16px' }}>
-                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#1e3a8a' }}>RADIANT INTELLECTUALS' COLLEGE</h2>
-                <div style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Knowledge • Discipline • Excellence</div>
-                <h3 style={{ margin: '8px 0 0 0', fontSize: '12px', background: '#1e3a8a', color: '#fff', padding: '4px 0', textTransform: 'uppercase' }}>
-                  WEEKLY ATTENDANCE RECORD ({sessionPeriod.toUpperCase()} SESSION)
-                </h3>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', fontSize: '10px', marginBottom: '14px', fontWeight: 'bold', gap: '8px' }}>
-                <div>
-                  <div>Class: {className}</div>
-                  <div>Class Teacher: {currentUser?.firstName ? `${currentUser.firstName} ${currentUser.surname || ''}` : currentUser?.name || 'Mr. Adeboye'}</div>
-                  <div>Week: {activeWeekBounds.rangeString}</div>
-                </div>
-                <div>
-                  <div>Term: First Term</div>
-                  <div>Register Session: {sessionPeriod}</div>
-                  <div>Academic Year: 2026/2027</div>
-                </div>
-              </div>
-
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', fontSize: '10px', marginBottom: '16px' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', border: '1px solid #000' }}>
-                      <th style={{ border: '1px solid #000', padding: '4px' }}>S/N</th>
-                      <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>STUDENT NAME</th>
-                      <th style={{ border: '1px solid #000', padding: '4px' }}>REG. NO</th>
-                      {activeWeekBounds.weekDays.map((wd, i) => (
-                        <th key={i} style={{ border: '1px solid #000', padding: '4px' }}>{wd.label}</th>
-                      ))}
-                      <th style={{ border: '1px solid #000', padding: '4px' }}>PRESENT</th>
-                      <th style={{ border: '1px solid #000', padding: '4px' }}>ABSENT</th>
-                      <th style={{ border: '1px solid #000', padding: '4px' }}>%</th>
-                    </tr>
-                  </thead>
-                  <tbody style={{ textAlign: 'center' }}>
-                    {(weeklyReport.length > 0 ? weeklyReport : students).map((st, i) => (
-                      <tr key={st.studentId || i}>
-                        <td style={{ border: '1px solid #000', padding: '4px' }}>{i + 1}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', fontWeight: 'bold' }}>{st.name}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px' }}>{st.admissionNo}</td>
-                        
-                        {activeWeekBounds.weekDays.map((wd, idx) => {
-                          const dayStatus = st.logsByDate ? st.logsByDate[wd.isoDate] : '';
-                          return (
-                            <td key={idx} style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>
-                              {getStatusSymbol(dayStatus)}
-                            </td>
-                          );
-                        })}
-
-                        <td style={{ border: '1px solid #000', padding: '4px' }}>{st.present ?? (st.status === 'Present' ? 1 : 0)}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px' }}>{st.absent ?? (st.status === 'Absent' ? 1 : 0)}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{st.attendancePercentage ?? 100}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: '24px', fontSize: '10px', gap: '16px' }}>
-                <div>
-                  <div>Teacher's Signature: __________________</div>
-                  <div style={{ marginTop: '2px' }}>Date: {new Date().toLocaleDateString()}</div>
-                </div>
-                <div>
-                  <div>Principal/HM Signature: __________________</div>
-                  <div style={{ marginTop: '2px' }}>Date: ______________</div>
-                </div>
-              </div>
-            </div>
-
-            {/* ACTION BUTTONS */}
-            <div style={{ marginTop: '20px', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={handleDownloadPDF} 
-                disabled={downloading}
-                style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                <Download size={14} /> {downloading ? 'Downloading PDF...' : 'Download PDF'}
-              </button>
-              <button onClick={() => window.print()} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>Print Broadsheet</button>
-              <button onClick={() => setShowBroadsheet(false)} style={{ background: '#64748b', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>Close</button>
-            </div>
-          </div>
-        </div>
+        <AttendanceReportDesk
+          className={className}
+          setClassName={setClassName}
+          sessionPeriod={sessionPeriod}
+          setSessionPeriod={setSessionPeriod}
+          reportDate={reportDate}
+          setReportDate={setReportDate}
+          currentReportWeek={currentReportWeek}
+          handleGenerateReport={handleGenerateReport}
+          recentReportsList={recentReportsList}
+          handleOpenSavedReport={handleOpenSavedReport}
+          showBroadsheet={showBroadsheet}
+          setShowBroadsheet={setShowBroadsheet}
+          activeReportWeek={activeReportWeek}
+          currentUser={currentUser}
+          weeklyReport={weeklyReport}
+          students={students}
+          handleDownloadPDF={handleDownloadPDF}
+          downloading={downloading}
+        />
       )}
 
     </div>
