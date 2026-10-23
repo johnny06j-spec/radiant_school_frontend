@@ -1,12 +1,19 @@
 // src/components/teacher/AttendanceModule.jsx
 import React, { useState, useEffect } from 'react';
-import { Calendar, Save, ShieldAlert, Check } from 'lucide-react';
+import { Calendar, Save, ShieldAlert } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
 
 const AttendanceModule = ({ profile }) => {
-  const isPrimary = profile?.schoolSection === 'PRIMARY';
-  const isCT = isPrimary ? true : Boolean(profile?.isClassTeacher);
-  const ctClass = isPrimary ? (profile?.assignedClass || 'KG 1') : (profile?.classTeacherOf || '');
+  // 🟢 Flexible section check matching Primary, Nursery, Basic, or KG
+  const isPrimaryOrNursery = /PRIMARY|NURSERY|BASIC|KG|CRECHE|PRE-SCHOOL/i.test(
+    profile?.schoolSection || profile?.assignedClass || profile?.currentClass || ''
+  );
+
+  // 🟢 Fallback: enable access if designated as Class Teacher OR assigned to class in Primary/Nursery
+  const isCT = Boolean(profile?.isClassTeacher) || isPrimaryOrNursery || Boolean(profile?.assignedClass) || Boolean(profile?.classTeacherOf);
+
+  // 🟢 Determine active class room cleanly
+  const ctClass = profile?.assignedClass || profile?.classTeacherOf || profile?.currentClass || 'Nursery 2';
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [roster, setRoster] = useState([]);
