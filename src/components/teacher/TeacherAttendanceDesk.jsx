@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle, Clock, XCircle, FileText, Save, 
-  Eye, FileSpreadsheet, CheckCheck, Lock, UserCheck, AlertCircle, Download
+  Eye, FileSpreadsheet, CheckCheck, Lock, AlertCircle, Download
 } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import axiosInstance from '../../api/axiosInstance';
@@ -196,7 +196,6 @@ export default function TeacherAttendanceDesk({ currentUser }) {
 
     setDownloading(true);
 
-    const activeBounds = activeReportWeek || currentReportWeek;
     const sanitizedFileName = `Weekly_Attendance_${className}_${sessionPeriod}_Period.pdf`.replace(/\s+/g, '_');
 
     const opt = {
@@ -408,7 +407,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
                 </thead>
                 <tbody>
                   {students.map((st, idx) => (
-                    <tr key={st.studentId} style={{ borderBottom: '1px solid #1e293b' }}>
+                    <tr key={st.studentId || idx} style={{ borderBottom: '1px solid #1e293b' }}>
                       <td style={{ padding: '10px 8px', color: '#64748b' }}>{idx + 1}</td>
                       <td style={{ padding: '10px 8px', fontWeight: 'bold' }}>{st.name}</td>
                       <td style={{ padding: '10px 8px', color: '#38bdf8', fontFamily: 'monospace' }}>{st.admissionNo}</td>
@@ -538,7 +537,6 @@ export default function TeacherAttendanceDesk({ currentUser }) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '12px' }}>
           <div style={{ background: '#ffffff', color: '#000', width: '100%', maxWidth: '850px', padding: '20px 16px', borderRadius: '8px', maxHeight: '92vh', overflowY: 'auto', fontFamily: 'sans-serif' }}>
             
-            {/* 🟢 ID ADDED HERE FOR HTML2PDF TARGETING */}
             <div id="attendance-broadsheet-content" style={{ background: '#ffffff', color: '#000', padding: '10px' }}>
               <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '16px' }}>
                 <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#1e3a8a' }}>RADIANT INTELLECTUALS' COLLEGE</h2>
