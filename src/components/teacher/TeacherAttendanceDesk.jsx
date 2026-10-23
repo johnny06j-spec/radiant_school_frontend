@@ -9,17 +9,29 @@ import AttendanceReportDesk from './AttendanceReportDesk';
 
 export default function TeacherAttendanceDesk({ currentUser }) {
   const [activeTab, setActiveTab] = useState('take-attendance');
-  
-  // 🟢 Class resolution prioritizing classTeacherOf for Secondary
-  const rawClass = currentUser?.classTeacherOf || currentUser?.assignedClass || currentUser?.assignedClasses?.[0];
-  const userAssignedClass = (!rawClass || rawClass === 'N/A') ? 'JSS 3' : rawClass;
 
-  const [className, setClassName] = useState(userAssignedClass);
+  // Helper to dynamically resolve the teacher's designated class across any section/role
+  const resolveUserClass = (user) => {
+    if (!user) return '';
+    const isSec = (user?.schoolSection || user?.department || '').toUpperCase().includes('SECONDARY');
+
+    let classCandidate = isSec 
+      ? (user?.classTeacherOf || user?.assignedClass)
+      : (user?.assignedClass || user?.classTeacherOf || user?.assignedClasses?.[0]);
+
+    if (!classCandidate && Array.isArray(user?.subjectAllocations) && user.subjectAllocations.length > 0) {
+      classCandidate = user.subjectAllocations[0]?.className;
+    }
+
+    return (!classCandidate || classCandidate === 'N/A') ? '' : classCandidate.trim();
+  };
+
+  const [className, setClassName] = useState(resolveUserClass(currentUser));
   const [sessionPeriod, setSessionPeriod] = useState('Morning');
-  
+
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
-  
+
   const [students, setStudents] = useState([]);
   const [weeklyReport, setWeeklyReport] = useState([]);
   const [recentReportsList, setRecentReportsList] = useState([]);
@@ -35,7 +47,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
     const d = new Date(dateStr);
     const day = d.getDay();
     const diffToMon = d.getDate() - day + (day === 0 ? -6 : 1);
-    
+
     const monday = new Date(d.setDate(diffToMon));
     const friday = new Date(monday);
     friday.setDate(monday.getDate() + 4);
@@ -67,8 +79,8 @@ export default function TeacherAttendanceDesk({ currentUser }) {
 
   useEffect(() => {
     if (currentUser) {
-      const resolved = currentUser?.classTeacherOf || currentUser?.assignedClass || currentUser?.assignedClasses?.[0];
-      if (resolved && resolved !== 'N/A') {
+      const resolved = resolveUserClass(currentUser);
+      if (resolved) {
         setClassName(resolved);
       }
     }
@@ -122,7 +134,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
 
   const handleGenerateReport = async () => {
     await fetchWeeklyReport(currentReportWeek);
-    
+
     const newEntry = {
       id: `${currentReportWeek.shortRange}-${sessionPeriod}-${className}`,
       dateRange: currentReportWeek.shortRange,
@@ -221,17 +233,17 @@ export default function TeacherAttendanceDesk({ currentUser }) {
           <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto', color: '#ef4444' }}>
             <Lock size={28} />
           </div>
-          
+
           <h2 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 10px 0' }}>Class Teacher Assignment Required</h2>
           <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: '1.6', margin: '0 0 20px 0' }}>
-            Only the designated Class Teacher for <strong style={{ color: '#38bdf8' }}>{className}</strong> can mark and manage daily attendance for this class.
+            Only the designated Class Teacher for <strong style={{ color: '#38bdf8' }}>{className || 'your class'}</strong> can mark and manage daily attendance.
           </p>
 
           <div style={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', textAlign: 'left', marginBottom: '20px' }}>
             <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#60a5fa', textTransform: 'uppercase', marginBottom: '10px' }}>
               HOW ACCESS RIGHTS WORK:
             </div>
-            
+
             <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5' }}>
               <li><strong>Primary Section:</strong> Class teachers automatically manage their room.</li>
               <li><strong>Secondary Section:</strong> Management explicitly assigns one Class Teacher per arm.</li>
@@ -244,7 +256,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
 
   return (
     <div style={{ padding: '12px', color: '#fff', fontFamily: 'system-ui, sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
-      
+
       {/* HEADER & TABS */}
       <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
         <div>
