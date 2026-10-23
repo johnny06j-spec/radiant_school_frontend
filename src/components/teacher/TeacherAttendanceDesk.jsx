@@ -10,8 +10,10 @@ import axiosInstance from '../../api/axiosInstance';
 export default function TeacherAttendanceDesk({ currentUser }) {
   const [activeTab, setActiveTab] = useState('take-attendance');
   
-  // Dynamic assigned class resolution
-  const userAssignedClass = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0] || 'KG 1';
+  // 🟢 Dynamic assigned class resolution with 'N/A' fallback safeguard
+  const rawAssigned = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0];
+  const userAssignedClass = (!rawAssigned || rawAssigned === 'N/A') ? 'Nursery 2' : rawAssigned;
+
   const [className, setClassName] = useState(userAssignedClass);
   const [sessionPeriod, setSessionPeriod] = useState('Morning');
   
@@ -66,18 +68,18 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   const currentTakeWeek = getWeekBounds(attendanceDate);
   const currentReportWeek = getWeekBounds(reportDate);
 
-  // Sync className when currentUser prop resolves/updates
+  // Sync className when currentUser prop resolves/updates (ignoring 'N/A')
   useEffect(() => {
     if (currentUser) {
       const assigned = currentUser?.assignedClass || currentUser?.classTeacherOf || currentUser?.assignedClasses?.[0];
-      if (assigned) {
+      if (assigned && assigned !== 'N/A') {
         setClassName(assigned);
       }
     }
   }, [currentUser]);
 
   const fetchAttendanceSheet = async () => {
-    if (!className) return;
+    if (!className || className === 'N/A') return;
     try {
       setLoading(true);
       setIsNotClassTeacher(false);
@@ -97,7 +99,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   };
 
   const fetchWeeklyReport = async (targetWeekBounds) => {
-    if (!className) return;
+    if (!className || className === 'N/A') return;
     try {
       setLoading(true);
       const bounds = targetWeekBounds || currentReportWeek;
@@ -117,7 +119,7 @@ export default function TeacherAttendanceDesk({ currentUser }) {
   };
 
   useEffect(() => {
-    if (activeTab === 'take-attendance' && className) {
+    if (activeTab === 'take-attendance' && className && className !== 'N/A') {
       fetchAttendanceSheet();
     }
   }, [className, attendanceDate, sessionPeriod, activeTab]);
