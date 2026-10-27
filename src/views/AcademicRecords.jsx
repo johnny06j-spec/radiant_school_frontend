@@ -1,10 +1,13 @@
 // src/views/AcademicRecords.jsx
 import React, { useState, useEffect } from 'react';
 import { Lock, AlertCircle, Download, CheckCircle2, Loader2, CreditCard } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 import axiosInstance from '../api/axiosInstance';
 
 const AcademicRecords = ({ activeStudent }) => {
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+
   const [resultState, setResultState] = useState({
     isReleased: false,
     isCleared: false,
@@ -65,20 +68,45 @@ const AcademicRecords = ({ activeStudent }) => {
     fetchStudentResult();
   }, [activeStudent?._id, selectedTerm, selectedSession]);
 
-  const handlePrintPDF = async () => {
+  const handleDownloadPDF = async () => {
+    if (!activeStudent?._id) return;
     try {
+      setDownloading(true);
+
       const response = await axiosInstance.get(`/teachers/download-result-pdf/${activeStudent._id}`, {
-        params: { term: selectedTerm, session: selectedSession },
+        params: { term: selectedTerm, session: selectedSession, download: 'true' },
         responseType: 'text'
       });
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(response.data);
-        printWindow.document.close();
-      }
+      // Remove window.print script tag to prevent opening print dialog
+      const cleanHtml = response.data.replace(/<script>.*?window\.print\(\).*?<\/script>/gs, '');
+
+      // Render into temporary off-screen element
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.width = '800px';
+      tempDiv.innerHTML = cleanHtml;
+      document.body.appendChild(tempDiv);
+
+      const studentName = activeStudent?.name || `${activeStudent?.surname || ''}_${activeStudent?.firstName || ''}`.trim() || 'Student';
+      const sanitizedFileName = `Report_Card_${studentName}_${selectedTerm}_${selectedSession}.pdf`.replace(/\s+/g, '_');
+
+      const opt = {
+        margin:       [8, 8, 8, 8],
+        filename:     sanitizedFileName,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(tempDiv).save();
+      document.body.removeChild(tempDiv);
     } catch (err) {
-      alert("Failed to render printable report card.");
+      console.error("PDF generation error:", err);
+      alert("Failed downloading report card PDF.");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -168,10 +196,12 @@ const AcademicRecords = ({ activeStudent }) => {
             </div>
 
             <button 
-              onClick={handlePrintPDF}
-              style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: downloading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <Download size={14} /> Download / Print Report Card
+              {downloading ? <Loader2 size={14} className="spin-loader" /> : <Download size={14} />}
+              {downloading ? 'Downloading PDF...' : 'Download Report Card'}
             </button>
           </div>
 
