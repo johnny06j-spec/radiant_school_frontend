@@ -24,6 +24,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
   const isCT = isExecutive ? false : (isPrimary ? true : Boolean(profile?.isClassTeacher || profile?.classTeacherOf));
   const ctClass = isPrimary ? (profile?.assignedClass || 'KG 1') : (profile?.classTeacherOf || '');
 
+  // 🟢 Ready Results is unlocked for all subject teachers (View Mode)
   const navItems = isExecutive
     ? [
         { id: 'OVERVIEW', label: 'Executive Dashboard', icon: LayoutDashboard },
@@ -33,12 +34,12 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
         { id: 'OVERVIEW', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'RESULT_ENTRY', label: 'Result Entry', icon: FileSpreadsheet },
         { id: 'ATTENDANCE', label: 'Attendance Register', icon: CalendarCheck, isRestricted: !isCT },
-        { id: 'READY_RESULTS', label: 'Ready Results', icon: CheckCircle2, isRestricted: !isCT }
+        { id: 'READY_RESULTS', label: 'Ready Results', icon: CheckCircle2, isRestricted: false }
       ];
 
   const handleNavClick = (item) => {
     if (item.isRestricted) {
-      alert("Access Restricted: Daily register and broadsheet operations are reserved for Class Teachers.");
+      alert("Access Restricted: Daily register operations are reserved strictly for Class Teachers.");
       return;
     }
     setActiveTab(item.id);
@@ -73,7 +74,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
         borderRight: '1px solid #1e293b',
         display: 'flex',
         flexDirection: 'column',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         transition: 'transform 0.3s ease-in-out',
         transform: mobileOpen || (window.innerWidth >= 1024) ? 'translateX(0)' : 'translateX(-100%)'
       }}>
@@ -89,7 +90,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
                 border: `1px solid ${isExecutive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'}`, 
                 display: 'flex', 
                 alignItems: 'center', 
-                justify: 'center', 
+                justifyContent: 'center', 
                 color: isExecutive ? '#34d399' : '#60a5fa' 
               }}>
                 <GraduationCap size={22} />
@@ -158,7 +159,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
                     borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
-                    justify: 'space-between',
+                    justifyContent: 'space-between',
                     gap: '12px',
                     fontSize: '13px',
                     fontWeight: 'bold',
@@ -211,7 +212,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, mobileOpen, setMobileOpen, pr
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center',
+              justifyContent: 'center',
               gap: '8px'
             }}
           >
