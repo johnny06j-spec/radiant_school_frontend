@@ -10,7 +10,6 @@ import AttendanceReportDesk from './AttendanceReportDesk';
 export default function TeacherAttendanceDesk({ currentUser }) {
   const [activeTab, setActiveTab] = useState('take-attendance');
 
-  // Helper to dynamically resolve the teacher's designated class across any section/role
   const resolveUserClass = (user) => {
     if (!user) return '';
     const isSec = (user?.schoolSection || user?.department || '').toUpperCase().includes('SECONDARY');
