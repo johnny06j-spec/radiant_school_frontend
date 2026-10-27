@@ -1,7 +1,6 @@
 // src/views/AcademicRecords.jsx
 import React, { useState, useEffect } from 'react';
 import { Lock, AlertCircle, Download, CheckCircle2, Loader2, CreditCard } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
 import axiosInstance from '../api/axiosInstance';
 
 const AcademicRecords = ({ activeStudent }) => {
@@ -73,37 +72,49 @@ const AcademicRecords = ({ activeStudent }) => {
     try {
       setDownloading(true);
 
+      // 1. Fetch raw report card template HTML from backend
       const response = await axiosInstance.get(`/teachers/download-result-pdf/${activeStudent._id}`, {
         params: { term: selectedTerm, session: selectedSession, download: 'true' },
         responseType: 'text'
       });
 
-      // Remove window.print script tag to prevent opening print dialog
-      const cleanHtml = response.data.replace(/<script>.*?window\.print\(\).*?<\/script>/gs, '');
+      // 2. Open a dedicated clean window for complete DOM rendering
+      const reportWindow = window.open('', '_blank');
+      if (!reportWindow) {
+        alert("Please allow popups to view and save your report card.");
+        return;
+      }
 
-      // Render into temporary off-screen element
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.width = '800px';
-      tempDiv.innerHTML = cleanHtml;
-      document.body.appendChild(tempDiv);
+      // 3. Inject html2pdf bundle into window context to ensure images and CSS load before saving
+      const studentName = (activeStudent?.name || activeStudent?.firstName || 'Student').replace(/\s+/g, '_');
+      const fullHtml = `
+        ${response.data}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+        <script>
+          window.onload = function() {
+            const opt = {
+              margin:       [6, 6, 6, 6],
+              filename:     \`Report_Card_${studentName}_${selectedTerm}_${selectedSession}.pdf\`.replace(/\\s+/g, '_'),
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2, useCORS: true, logging: false },
+              jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
 
-      const studentName = activeStudent?.name || `${activeStudent?.surname || ''}_${activeStudent?.firstName || ''}`.trim() || 'Student';
-      const sanitizedFileName = `Report_Card_${studentName}_${selectedTerm}_${selectedSession}.pdf`.replace(/\s+/g, '_');
+            setTimeout(() => {
+              html2pdf().set(opt).from(document.body).save().then(() => {
+                setTimeout(() => { window.close(); }, 1200);
+              });
+            }, 300);
+          };
+        </script>
+      `;
 
-      const opt = {
-        margin:       [8, 8, 8, 8],
-        filename:     sanitizedFileName,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+      reportWindow.document.open();
+      reportWindow.document.write(fullHtml);
+      reportWindow.document.close();
 
-      await html2pdf().set(opt).from(tempDiv).save();
-      document.body.removeChild(tempDiv);
     } catch (err) {
-      console.error("PDF generation error:", err);
+      console.error("PDF download error:", err);
       alert("Failed downloading report card PDF.");
     } finally {
       setDownloading(false);
