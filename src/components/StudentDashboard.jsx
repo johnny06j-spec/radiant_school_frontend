@@ -1,5 +1,5 @@
 // src/components/StudentDashboard.jsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   User, BookOpen, CreditCard, FileText, 
@@ -63,19 +63,23 @@ const StudentDashboard = () => {
       const response = await API.get(endpoint);
       if (response.data?.success && response.data?.student) {
         const student = response.data.student;
+        const studentCampus = student.campus || 'Emerald Campus';
+
+        const ledgerRes = await API.get(
+          `/finance/student-ledger/${student._id}?term=${encodeURIComponent(systemTerm)}&session=${encodeURIComponent(systemSession)}&campus=${encodeURIComponent(studentCampus)}`
+        );
+
+        if (ledgerRes.data?.success) {
+          setLedgerData(ledgerRes.data.data);
+        } else {
+          setLedgerData(null);
+        }
+
         setStudentData(student);
         setActiveStudentId(student._id);
 
         if (student.linkedSiblings && Array.isArray(student.linkedSiblings)) {
           setLinkedSiblings(student.linkedSiblings);
-        }
-
-        const studentCampus = student.campus || 'Emerald Campus';
-        const ledgerRes = await API.get(
-          `/finance/student-ledger/${student._id}?term=${encodeURIComponent(systemTerm)}&session=${encodeURIComponent(systemSession)}&campus=${encodeURIComponent(studentCampus)}`
-        );
-        if (ledgerRes.data?.success) {
-          setLedgerData(ledgerRes.data.data);
         }
       }
     } catch (err) {
@@ -183,12 +187,12 @@ const StudentDashboard = () => {
       : null
   };
 
-  // 🟢 ENFORCE REAL LEDGER METRICS PRIORITY TO PREVENT CROSS-CAMPUS FALLBACK DRIFT
+  // 🟢 STRICT METRIC PRIORITY: Reads ledger Data first to prevent fallback bleed
   const finance = {
-    currentTermFee: ledgerData?.currentTermFee ?? studentData?.financialSummary?.currentTermFee ?? 0,
-    totalPaid: ledgerData?.totalPaid ?? studentData?.financialSummary?.totalPaid ?? 0,
-    previousOutstanding: ledgerData?.previousOutstanding ?? studentData?.financialSummary?.previousOutstanding ?? 0,
-    totalOutstanding: ledgerData?.totalOutstanding ?? studentData?.financialSummary?.totalOutstanding ?? 0
+    currentTermFee: ledgerData ? (ledgerData.currentTermFee ?? 0) : (studentData?.financialSummary?.currentTermFee ?? 0),
+    totalPaid: ledgerData ? (ledgerData.totalPaid ?? 0) : (studentData?.financialSummary?.totalPaid ?? 0),
+    previousOutstanding: ledgerData ? (ledgerData.previousOutstanding ?? 0) : (studentData?.financialSummary?.previousOutstanding ?? 0),
+    totalOutstanding: ledgerData ? (ledgerData.totalOutstanding ?? 0) : (studentData?.financialSummary?.totalOutstanding ?? 0)
   };
 
   const breakdownData = [];
