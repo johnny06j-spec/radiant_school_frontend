@@ -183,6 +183,7 @@ const StudentDashboard = () => {
       : null
   };
 
+  // 🟢 ENFORCE REAL LEDGER METRICS PRIORITY TO PREVENT CROSS-CAMPUS FALLBACK DRIFT
   const finance = {
     currentTermFee: ledgerData?.currentTermFee ?? studentData?.financialSummary?.currentTermFee ?? 0,
     totalPaid: ledgerData?.totalPaid ?? studentData?.financialSummary?.totalPaid ?? 0,

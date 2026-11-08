@@ -23,7 +23,7 @@ const StudentFinance = ({ studentId }) => {
     'Third Term': true,
   });
 
-  // 🟢 FETCH PROFILE & LEDGER FOR THE ACTIVE STUDENT ID
+  // 🟢 FETCH PROFILE & LEDGER FOR THE ACTIVE STUDENT ID WITH STRICT CAMPUS ISOLATION
   const fetchProfileData = useCallback(async () => {
     setLoading(true);
     try {
@@ -42,12 +42,13 @@ const StudentFinance = ({ studentId }) => {
         const activeStudentId = studentObj._id;
         const currentSession = studentObj.academicSession || '2026/2027';
         const currentTerm = studentObj.academicTerm || 'First Term';
+        const studentCampus = studentObj.campus || 'Emerald Campus';
 
-        // 2. Fetch Targeted Student Ledger Statement
+        // 2. Fetch Targeted Student Ledger Statement (STRICTLY INCLUDING CAMPUS)
         const ledgerRes = await API.get(
           `/finance/student-ledger/${activeStudentId}?term=${encodeURIComponent(
             currentTerm
-          )}&session=${encodeURIComponent(currentSession)}`
+          )}&session=${encodeURIComponent(currentSession)}&campus=${encodeURIComponent(studentCampus)}`
         );
         const ledgerJson = ledgerRes.data;
 
@@ -286,7 +287,7 @@ const StudentFinance = ({ studentId }) => {
             <strong style={{ color: 'var(--accent-primary)' }}>
               {profile?.firstName} {profile?.lastName}
             </strong>{' '}
-            ({profile?.currentClass}).
+            ({profile?.currentClass}) - <span style={{ color: '#60a5fa', fontWeight: 'bold' }}>{profile?.campus}</span>.
           </p>
         </div>
         <div style={styles.activeSessionBadge}>
@@ -408,7 +409,7 @@ const StudentFinance = ({ studentId }) => {
                       {payment.reference}
                     </td>
                     <td style={styles.tdPrimary}>
-                      {payment.session || profile?.academicSession || '2026/2027'} - {payment.term || 'First Term'}
+                      {payment.session || profile?.academicSession || '2026/2027'} ({payment.term || 'First Term'})
                     </td>
                     <td style={{ ...styles.td, color: 'var(--accent-success)', fontWeight: '700' }}>
                       ₦{Number(payment.amountPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
