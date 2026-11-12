@@ -86,6 +86,7 @@ const StaffRegistry = ({ selectedCampus = 'All Campuses' }) => {
         'Creative Art',
         'National Value',
         'Garment Making',
+        'Phonics',
         'Yoruba'
       ];
     }
