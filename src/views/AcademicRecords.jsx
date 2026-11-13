@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Lock, AlertCircle, Download, CheckCircle2, Loader2, CreditCard } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
 
-const AcademicRecords = ({ activeStudent }) => {
+const AcademicRecords = ({ activeStudent, onNavigateTab }) => {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
@@ -15,8 +15,8 @@ const AcademicRecords = ({ activeStudent }) => {
     message: ''
   });
 
-  const [selectedTerm, setSelectedTerm] = useState('First Term');
-  const [selectedSession, setSelectedSession] = useState('2026/2027');
+  const [selectedTerm, setSelectedTerm] = useState(activeStudent?.academicTerm || 'First Term');
+  const [selectedSession, setSelectedSession] = useState(activeStudent?.academicSession || '2026/2027');
 
   const fetchStudentResult = async () => {
     if (!activeStudent?._id) {
@@ -72,20 +72,17 @@ const AcademicRecords = ({ activeStudent }) => {
     try {
       setDownloading(true);
 
-      // 1. Fetch raw report card template HTML from backend
       const response = await axiosInstance.get(`/teachers/download-result-pdf/${activeStudent._id}`, {
         params: { term: selectedTerm, session: selectedSession, download: 'true' },
         responseType: 'text'
       });
 
-      // 2. Open a dedicated clean window for complete DOM rendering
       const reportWindow = window.open('', '_blank');
       if (!reportWindow) {
         alert("Please allow popups to view and save your report card.");
         return;
       }
 
-      // 3. Inject html2pdf bundle into window context to ensure images and CSS load before saving
       const studentName = (activeStudent?.name || activeStudent?.firstName || 'Student').replace(/\s+/g, '_');
       const fullHtml = `
         ${response.data}
@@ -121,7 +118,14 @@ const AcademicRecords = ({ activeStudent }) => {
     }
   };
 
-  // Determine historical class from the review object, falling back to current active class
+  const handleClearFeesClick = () => {
+    if (typeof onNavigateTab === 'function') {
+      onNavigateTab('finance');
+    } else {
+      window.location.href = '/portal/finance';
+    }
+  };
+
   const resolvedHistoricalClass =
     resultState.data?.className ||
     resultState.data?.class ||
@@ -189,7 +193,7 @@ const AcademicRecords = ({ activeStudent }) => {
             Your term report card has been processed and approved by the Executive Desk. However, access is locked due to an outstanding fee balance of <strong style={{ color: '#ef4444' }}>₦{resultState.outstandingBalance?.toLocaleString()}</strong>.
           </p>
           <button 
-            onClick={() => window.location.href = '/portal/finance'}
+            onClick={handleClearFeesClick}
             style={{ padding: '10px 20px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
           >
             <CreditCard size={16} /> Clear Outstanding Fees Now
