@@ -2,10 +2,22 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api', 
-  timeout: 10000,
-  withCredentials: true, // 🟢 CRITICAL: Enables automatic cross-origin httpOnly cookie transmission
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  timeout: 15000,
+  withCredentials: true, // Keeps httpOnly cookies active on desktop browsers
 });
+
+// Request Interceptor: Attach Bearer token for iOS Safari / cross-origin mobile compatibility
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (token && token !== 'null' && token !== 'undefined') {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Response Interceptor: Handles 401 Unauthorized errors by automatically refreshing tokens
 API.interceptors.response.use(
@@ -13,18 +25,25 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Prevent infinite loop if the refresh endpoint itself fails or request was already retried
     if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh') {
       originalRequest._retry = true;
       try {
-        // Attempt to re-issue access token using httpOnly refresh cookie
-        await API.post('/auth/refresh');
-        
-        // Retry the original request with new cookies attached
+        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshRes = await API.post('/auth/refresh', refreshToken ? { refreshToken } : {});
+
+        // Save newly issued accessToken if returned in JSON body
+        const newAccessToken = refreshRes.data?.accessToken || refreshRes.data?.token;
+        if (newAccessToken) {
+          localStorage.setItem('accessToken', newAccessToken);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        }
+
         return API(originalRequest);
       } catch (refreshErr) {
         console.error("Session refresh failed. Redirecting to login...", refreshErr);
-        // Clear local session storage if used and redirect user to login
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('token');
         window.location.href = '/login';
       }
     }
