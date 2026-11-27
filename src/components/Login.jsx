@@ -27,17 +27,25 @@ const Login = () => {
       });
 
       if (response.data.success) {
-        // 1. Save auth credentials to local storage
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
+        // 1. Save auth credentials to local storage for iOS / mobile compatibility
+        const accessToken = response.data.accessToken || response.data.token;
+        if (accessToken && accessToken !== 'undefined' && accessToken !== 'null') {
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('token', accessToken);
+        }
+        if (response.data.refreshToken && response.data.refreshToken !== 'undefined' && response.data.refreshToken !== 'null') {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
+        if (response.data.user) {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+
         // 2. Redirect dynamically based on the returned user role
         const role = (response.data.user?.role || '').toLowerCase();
 
         if (role === 'admin') {
           window.location.href = '/admin-dashboard';
         } else if (role === 'teacher' || role === 'principal' || role === 'headmaster') {
-          // 🟢 Headmaster role included to navigate directly to Faculty Workspace
           window.location.href = '/teacher-dashboard';
         } else if (role === 'student') {
           window.location.href = '/student-dashboard';
